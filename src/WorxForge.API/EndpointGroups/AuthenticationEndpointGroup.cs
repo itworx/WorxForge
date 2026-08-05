@@ -6,7 +6,7 @@ using WorxForge.Domain.Commands.Authentication;
 using WorxForge.Domain.Dtos.Authentication;
 using WorxForge.Domain.Dtos.Profile;
 using WorxForge.Domain.Exceptions;
-using WorxForge.Domain.Queries.Authentication;
+using WorxForge.Domain.Queries.Profile;
 
 namespace WorxForge.API.EndpointGroups;
 

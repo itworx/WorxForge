@@ -1,9 +1,9 @@
-﻿using WorxForge.Core.Abstractions;
+using WorxForge.Core.Abstractions;
 using WorxForge.Core.Interfaces.Services;
 using WorxForge.Domain.Dtos.Profile;
-using WorxForge.Domain.Queries.Authentication;
+using WorxForge.Domain.Queries.Profile;
 
-namespace WorxForge.Core.Handlers.Authentication;
+namespace WorxForge.Core.Handlers.Profile;
 
 public sealed class GetMyProfileQueryHandler : IQueryHandler<GetMyProfileQuery, MyProfileDto>
 {

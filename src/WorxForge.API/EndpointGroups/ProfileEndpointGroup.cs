@@ -1,5 +1,4 @@
 ﻿using WorxForge.Domain.Commands.Profile;
-using WorxForge.Domain.Queries.Authentication;
 using WorxForge.Domain.Queries.Profile;
 
 namespace WorxForge.API.EndpointGroups;

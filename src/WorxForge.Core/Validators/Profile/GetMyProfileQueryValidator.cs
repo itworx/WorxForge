@@ -1,8 +1,8 @@
-﻿using WorxForge.Core.Abstractions;
+using WorxForge.Core.Abstractions;
 using WorxForge.Domain.Exceptions;
-using WorxForge.Domain.Queries.Authentication;
+using WorxForge.Domain.Queries.Profile;
 
-namespace WorxForge.Core.Validators.Authentication;
+namespace WorxForge.Core.Validators.Profile;
 
 public sealed class GetMyProfileQueryValidator : IRequestValidator<GetMyProfileQuery>
 {
