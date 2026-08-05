@@ -26,13 +26,15 @@ public sealed class AuthenticationService(
     private readonly IAuthSessionRepository _authSessionRepository = authSessionRepository;
     private readonly JwtAccessTokenOptions _jwtOptions = jwtOptions.Value;
     private readonly IConfiguration _configuration = configuration;
+    private const string DevelopmentGoogleSubjectSecretKey = "developmentGoogleSubject";
+    private const string DevelopmentEmailSecretKey = "developmentEmail";
 
     public async Task<AuthTokenDto> AuthenticateDevelopmentUserAsync(CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        const string developmentGoogleSubject = "dev-debug-google-subject";
-        const string developmentEmail = "test@example.com";
+        var developmentGoogleSubject = ResolveRequiredDevelopmentSecret(DevelopmentGoogleSubjectSecretKey);
+        var developmentEmail = ResolveRequiredDevelopmentSecret(DevelopmentEmailSecretKey);
 
         var user = await _userRepository.GetByGoogleIdAsync(developmentGoogleSubject, cancellationToken);
         if (user is not null)
@@ -77,6 +79,19 @@ public sealed class AuthenticationService(
         }
 
         return await BuildAccessTokenAsync(user, cancellationToken);
+    }
+
+    private string ResolveRequiredDevelopmentSecret(string key)
+    {
+        var value = _configuration[key];
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new WorxForgeException(
+                $"Development authentication secret '{key}' is missing. Configure it using ASP.NET Core user-secrets."
+            );
+        }
+
+        return value.Trim();
     }
 
     public Task RegisterAsync(string email, string username, string password, string passwordConfirm, CancellationToken cancellationToken) => throw new NotImplementedException();
