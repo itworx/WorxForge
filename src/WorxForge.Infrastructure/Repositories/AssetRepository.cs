@@ -3,6 +3,7 @@ using WorxForge.Core.Interfaces.Repositories;
 using WorxForge.Domain.Constants;
 using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Entities;
+using WorxForge.Domain.Enums;
 using WorxForge.Domain.Queries.Explore;
 using WorxForge.Infrastructure.Configuration;
 
@@ -11,11 +12,77 @@ namespace WorxForge.Infrastructure.Repositories;
 public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetRepository
 {
     public Task<Asset?> GetByIdAsync(Guid assetId, CancellationToken cancellationToken) => throw new NotImplementedException();
+
     public Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> SearchAsync(SearchAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> BrowseAsync(BrowseAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
+
+    public async Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> BrowseAsync(BrowseAssetsQuery query, CancellationToken cancellationToken)
+    {
+        var assets = dbContext.Assets.AsNoTracking();
+
+        if (query.DomainId.HasValue)
+        {
+            assets = assets.Where(asset => asset.DomainId == query.DomainId.Value);
+        }
+
+        if (query.AssetTypeId.HasValue)
+        {
+            assets = assets.Where(asset => asset.AssetTypeId == query.AssetTypeId.Value);
+        }
+
+        if (query.UseCaseId.HasValue)
+        {
+            assets = assets.Where(asset => asset.UseCaseId == query.UseCaseId.Value);
+        }
+
+        if (query.ToolId.HasValue)
+        {
+            assets = assets.Where(asset => dbContext.AssetTools
+                .Any(assetTool => assetTool.AssetId == asset.AssetId && assetTool.ToolId == query.ToolId.Value));
+        }
+
+        assets = ApplyFreshnessFilter(assets, query.Freshness);
+
+        var total = await assets.CountAsync(cancellationToken);
+
+        var pagedAssets = ApplySort(assets, query.SortBy, keywords: null)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize);
+
+        var items = await SelectAssetSummaries(pagedAssets, query.RequestingUserId).ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
+
     public Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> GetByOwnerAsync(Guid userId, int page, int pageSize, string? sortBy, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<IReadOnlyList<AssetSummaryDto>> GetFeaturedAsync(int limit, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<IReadOnlyList<AssetSummaryDto>> GetTrendingAsync(int limit, CancellationToken cancellationToken) => throw new NotImplementedException();
+
+    private static IQueryable<Asset> ApplyFreshnessFilter(IQueryable<Asset> assets, AssetFreshness? freshness)
+    {
+        var cutoff = freshness switch
+        {
+            AssetFreshness.Week => DateTime.UtcNow.AddDays(-7),
+            AssetFreshness.Month => DateTime.UtcNow.AddMonths(-1),
+            AssetFreshness.Quarter => DateTime.UtcNow.AddMonths(-3),
+            _ => (DateTime?)null
+        };
+
+        return cutoff.HasValue ? assets.Where(asset => asset.CreatedAt >= cutoff.Value) : assets;
+    }
+
+    // Relevance falls back to recency when there are no keywords to rank against.
+    private IQueryable<Asset> ApplySort(IQueryable<Asset> assets, string? sortBy, string? keywords) =>
+        sortBy?.Trim().ToLowerInvariant() switch
+        {
+            ExploreSortByConstants.Helpful => assets.OrderByDescending(asset =>
+                dbContext.Reactions.Count(reaction => reaction.AssetId == asset.AssetId && reaction.ReactionType == ReactionTypeConstants.Like)),
+            ExploreSortByConstants.Updated => assets.OrderByDescending(asset => asset.UpdatedAt),
+            ExploreSortByConstants.Discussed => assets.OrderByDescending(asset =>
+                dbContext.Comments.Count(comment => comment.AssetId == asset.AssetId && comment.DeletedAt == null)),
+            ExploreSortByConstants.Relevance when !string.IsNullOrWhiteSpace(keywords) =>
+                assets.OrderByDescending(asset => asset.Title.Contains(keywords) ? 1 : 0).ThenByDescending(asset => asset.CreatedAt),
+            _ => assets.OrderByDescending(asset => asset.CreatedAt)
+        };
 
     // Shared projection so every "browse" style query maps Asset -> AssetSummaryDto identically;
     // callers apply their own Where/OrderBy/Take before projecting.
