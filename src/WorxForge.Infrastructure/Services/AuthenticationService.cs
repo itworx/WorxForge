@@ -1,5 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Google.Apis.Auth;
 using Microsoft.Extensions.Configuration;
@@ -46,10 +47,11 @@ public sealed class AuthenticationService(
         if (user is null)
         {
             var nowUtc = DateTime.UtcNow;
+            var generatedUsername = await GenerateUniqueUsernameFromEmailAsync(developmentEmail, cancellationToken);
             user = new User
             {
                 UserId = Guid.NewGuid(),
-                Username = developmentEmail,
+                Username = generatedUsername,
                 DisplayName = developmentEmail,
                 Email = developmentEmail,
                 EmailVerified = true,
@@ -121,6 +123,10 @@ public sealed class AuthenticationService(
         {
             throw new WorxForgeException("Google ID token is invalid.", ex);
         }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw new WorxForgeException("Failed to validate Google ID token.", ex);
@@ -149,7 +155,8 @@ public sealed class AuthenticationService(
 
         if (user is null)
         {
-            user = CreateUserFromGooglePayload(payload, normalizedEmail);
+            var generatedUsername = await GenerateUniqueUsernameFromEmailAsync(normalizedEmail, cancellationToken);
+            user = CreateUserFromGooglePayload(payload, normalizedEmail, generatedUsername);
             await _userRepository.AddAsync(user, cancellationToken);
             return await BuildAccessTokenAsync(user, cancellationToken);
         }
@@ -212,14 +219,69 @@ public sealed class AuthenticationService(
         return clientId;
     }
 
-    private static User CreateUserFromGooglePayload(GoogleJsonWebSignature.Payload payload, string normalizedEmail)
+    private async Task<string> GenerateUniqueUsernameFromEmailAsync(string email, CancellationToken cancellationToken)
+    {
+        var baseUsername = ExtractUsernameBaseFromEmail(email);
+        if (!await _userRepository.ExistsByUsernameAsync(baseUsername, cancellationToken))
+        {
+            return baseUsername;
+        }
+
+        const int maxAttempts = 20;
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            var randomSuffix = RandomNumberGenerator.GetInt32(10, 1000);
+            var candidate = $"{baseUsername}{randomSuffix}";
+
+            if (!await _userRepository.ExistsByUsernameAsync(candidate, cancellationToken))
+            {
+                return candidate;
+            }
+        }
+
+        while (true)
+        {
+            var randomSuffix = RandomNumberGenerator.GetInt32(1000, 10000);
+            var candidate = $"{baseUsername}{randomSuffix}";
+
+            if (!await _userRepository.ExistsByUsernameAsync(candidate, cancellationToken))
+            {
+                return candidate;
+            }
+        }
+    }
+
+    private static string ExtractUsernameBaseFromEmail(string email)
+    {
+        var trimmedEmail = email.Trim();
+        var atIndex = trimmedEmail.IndexOf('@');
+        var localPart = atIndex > 0 ? trimmedEmail[..atIndex] : trimmedEmail;
+        var normalizedLocalPart = localPart.Trim().ToLowerInvariant();
+
+        if (string.IsNullOrWhiteSpace(normalizedLocalPart))
+        {
+            return "user";
+        }
+
+        var builder = new StringBuilder(normalizedLocalPart.Length);
+        foreach (var character in normalizedLocalPart)
+        {
+            if (char.IsLetterOrDigit(character) || character is '.' or '_' or '-')
+            {
+                builder.Append(character);
+            }
+        }
+
+        return builder.Length == 0 ? "user" : builder.ToString();
+    }
+
+    private static User CreateUserFromGooglePayload(GoogleJsonWebSignature.Payload payload, string normalizedEmail, string username)
     {
         if (string.IsNullOrWhiteSpace(payload.Subject))
         {
             throw new WorxForgeException("Google subject is missing from ID token payload.");
         }
 
-        var username = normalizedEmail;
         var displayName = string.IsNullOrWhiteSpace(payload.Name) ? username : payload.Name.Trim();
         var nowUtc = DateTime.UtcNow;
 
