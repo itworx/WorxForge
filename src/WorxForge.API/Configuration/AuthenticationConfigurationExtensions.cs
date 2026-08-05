@@ -29,6 +29,18 @@ public static class AuthenticationConfigurationExtensions
                         "JwtAccessToken configuration is incomplete. Issuer, Audience, and SigningKey are required.");
                 }
 
+                if (jwtOptions.ExpirationMinutes <= 0)
+                {
+                    throw new InvalidOperationException(
+                        "JwtAccessToken configuration is invalid. ExpirationMinutes must be greater than zero.");
+                }
+
+                if (Encoding.UTF8.GetByteCount(jwtOptions.SigningKey) < 32)
+                {
+                    throw new InvalidOperationException(
+                        "JwtAccessToken configuration is invalid. SigningKey must be at least 32 bytes (256 bits) for HS256.");
+                }
+
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
