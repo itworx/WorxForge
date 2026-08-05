@@ -1,4 +1,5 @@
 ﻿using WorxForge.Core.Abstractions;
+using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Queries.Authentication;
 
 namespace WorxForge.Core.Validators.Authentication;
@@ -7,6 +8,18 @@ public sealed class GetMyProfileQueryValidator : IRequestValidator<GetMyProfileQ
 {
     public Task ValidateAsync(GetMyProfileQuery request, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (request is null)
+        {
+            throw new WorxForgeException("Profile query is required.");
+        }
+
+        if (request.UserId == Guid.Empty)
+        {
+            throw new WorxForgeException("User identifier is required.");
+        }
+
+        return Task.CompletedTask;
     }
 }

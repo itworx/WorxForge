@@ -1,12 +1,26 @@
 ﻿using WorxForge.Core.Abstractions;
+using WorxForge.Core.Interfaces.Services;
+using WorxForge.Domain.Dtos.Profile;
 using WorxForge.Domain.Queries.Authentication;
 
 namespace WorxForge.Core.Handlers.Authentication;
 
-public sealed class GetMyProfileQueryHandler : IQueryHandler<GetMyProfileQuery, WorxForge.Domain.Dtos.Profile.MyProfileDto>
+public sealed class GetMyProfileQueryHandler : IQueryHandler<GetMyProfileQuery, MyProfileDto>
 {
-    public Task<WorxForge.Domain.Dtos.Profile.MyProfileDto> HandleAsync(GetMyProfileQuery query, CancellationToken cancellationToken)
+    private readonly IRequestValidator<GetMyProfileQuery> _validator;
+    private readonly IProfileService _profileService;
+
+    public GetMyProfileQueryHandler(
+        IRequestValidator<GetMyProfileQuery> validator,
+        IProfileService profileService)
     {
-        throw new NotImplementedException();
+        _validator = validator;
+        _profileService = profileService;
+    }
+
+    public async Task<MyProfileDto> HandleAsync(GetMyProfileQuery query, CancellationToken cancellationToken)
+    {
+        await _validator.ValidateAsync(query, cancellationToken);
+        return await _profileService.GetMyProfileAsync(query.UserId, cancellationToken);
     }
 }

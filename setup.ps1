@@ -13,7 +13,8 @@ function Write-Step  { Write-Host "  --> $args" -ForegroundColor Cyan   }
 function Write-Ok    { Write-Host "  [OK] $args" -ForegroundColor Green  }
 function Write-Fail  { Write-Host "  [FAIL] $args" -ForegroundColor Red  }
 
-$SolutionFile = Join-Path $PSScriptRoot 'src\WorxForge.slnx'
+$SolutionFile  = Join-Path $PSScriptRoot 'src\WorxForge.slnx'
+$ApiProject    = Join-Path $PSScriptRoot 'src\WorxForge.API'
 
 Write-Host ''
 Write-Host '==============================' -ForegroundColor DarkCyan
@@ -62,6 +63,40 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 Write-Ok 'Backend build succeeded.'
+
+# Check user-secrets
+Write-Host ''
+Write-Step 'Checking required user-secrets...'
+
+$requiredSecrets = @(
+    'JwtAccessToken:Issuer',
+    'JwtAccessToken:Audience',
+    'JwtAccessToken:SigningKey',
+    'JwtAccessToken:ExpirationMinutes',
+    'ConnectionStrings:Default',
+    'Authentication:Google:ClientId'
+)
+
+$secretsJson = dotnet user-secrets list --project $ApiProject 2>$null
+$missingSecrets = @()
+
+foreach ($secret in $requiredSecrets) {
+    if ($secretsJson -notmatch [regex]::Escape($secret)) {
+        $missingSecrets += $secret
+    }
+}
+
+if ($missingSecrets.Count -gt 0) {
+    Write-Host ''
+    Write-Host '  [WARN] The following user-secrets are not set:' -ForegroundColor Yellow
+    foreach ($s in $missingSecrets) {
+        Write-Host "         dotnet user-secrets set `"$s`" `"<value>`" --project src/WorxForge.API" -ForegroundColor Yellow
+    }
+    Write-Host ''
+    Write-Host '  See docs/architecture/authentication.md for required values.' -ForegroundColor Yellow
+} else {
+    Write-Ok 'All required user-secrets are present.'
+}
 
 Write-Host ''
 Write-Host '  Backend setup complete.' -ForegroundColor Green

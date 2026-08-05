@@ -597,8 +597,8 @@ namespace WorxForge.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasColumnName("email_verified");
 
-                    b.Property<Guid>("GoogleId")
-                        .HasColumnType("uniqueidentifier")
+                    b.Property<string>("GoogleId")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("google_id");
 
                     b.Property<string>("Role")
