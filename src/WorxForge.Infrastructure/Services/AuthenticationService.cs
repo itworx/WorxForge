@@ -102,9 +102,13 @@ public sealed class AuthenticationService(
         {
             payload = await GoogleJsonWebSignature.ValidateAsync(idToken, validationSettings);
         }
-        catch (Exception)
+        catch (InvalidJwtException ex)
         {
-            throw new WorxForgeException("Google ID token is invalid.");
+            throw new WorxForgeException("Google ID token is invalid.", ex);
+        }
+        catch (Exception ex)
+        {
+            throw new WorxForgeException("Failed to validate Google ID token.", ex);
         }
 
         if (!payload.EmailVerified || string.IsNullOrWhiteSpace(payload.Email))

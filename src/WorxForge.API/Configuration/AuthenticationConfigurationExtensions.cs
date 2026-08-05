@@ -25,7 +25,8 @@ public static class AuthenticationConfigurationExtensions
                     string.IsNullOrWhiteSpace(jwtOptions.Audience) ||
                     string.IsNullOrWhiteSpace(jwtOptions.SigningKey))
                 {
-                    return;
+                    throw new InvalidOperationException(
+                        "JwtAccessToken configuration is incomplete. Issuer, Audience, and SigningKey are required.");
                 }
 
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -78,6 +79,7 @@ public static class AuthenticationConfigurationExtensions
                         if (session.ExpiresAt <= DateTime.UtcNow)
                         {
                             context.Fail("Session is expired.");
+                            return;
                         }
                     }
                 };

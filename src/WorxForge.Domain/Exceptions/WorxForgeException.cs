@@ -9,4 +9,8 @@ public class WorxForgeException : Exception
     public WorxForgeException(string? message) : base(message)
     {
     }
+
+    public WorxForgeException(string? message, Exception? innerException) : base(message, innerException)
+    {
+    }
 }
