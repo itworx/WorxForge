@@ -10,7 +10,11 @@ namespace WorxForge.Infrastructure.Repositories;
 
 public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetRepository
 {
-    public Task<Asset?> GetByIdAsync(Guid assetId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public Task<Asset?> GetByIdAsync(Guid assetId, CancellationToken cancellationToken) =>
+        dbContext.Assets
+            .AsNoTracking()
+            .SingleOrDefaultAsync(asset => asset.AssetId == assetId, cancellationToken);
+
     public Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> SearchAsync(SearchAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> BrowseAsync(BrowseAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> GetByOwnerAsync(Guid userId, int page, int pageSize, string? sortBy, CancellationToken cancellationToken) => throw new NotImplementedException();
@@ -70,6 +74,16 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
             .Take(limit);
 
         return await SelectAssetSummaries(recentlyUpdatedAssets, userId).ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<AssetSummaryDto>> GetSavedAssetsAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var savedAssets = dbContext.Bookmarks
+            .AsNoTracking()
+            .Where(bookmark => bookmark.UserId == userId)
+            .Join(dbContext.Assets.AsNoTracking(), bookmark => bookmark.AssetId, asset => asset.AssetId, (bookmark, asset) => asset);
+
+        return await SelectAssetSummaries(savedAssets, userId).ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<AssetSummaryDto>> GetRecommendedForYouAsync(Guid userId, int limit, CancellationToken cancellationToken)
