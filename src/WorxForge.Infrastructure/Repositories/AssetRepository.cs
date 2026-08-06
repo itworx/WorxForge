@@ -1,7 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Runtime.CompilerServices;
 using WorxForge.Core.Interfaces.Repositories;
 using WorxForge.Domain.Constants;
 using WorxForge.Domain.Dtos.Assets;
+using WorxForge.Domain.Dtos.Explore;
 using WorxForge.Domain.Entities;
 using WorxForge.Domain.Enums;
 using WorxForge.Domain.Queries.Explore;
@@ -13,7 +15,128 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
 {
     public Task<Asset?> GetByIdAsync(Guid assetId, CancellationToken cancellationToken) => throw new NotImplementedException();
 
-    public Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> SearchAsync(SearchAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public async Task<(IReadOnlyList<AssetSearchResultDto> Items, int Total)> SearchAsync(AssetSearchCriteria criteria, CancellationToken cancellationToken)
+    {
+        var (selectBody, parameters) = BuildSearchSql(criteria);
+
+        // "AS Value" is required: EF Core composes SqlQuery<T>().SingleAsync() as a CTE, and
+        // SQL Server CTEs require every column - including COUNT(*) - to have a name.
+        var countSql = FormattableStringFactory.Create(
+            $"SELECT COUNT(*) AS Value FROM ({selectBody}) AS search_results",
+            parameters.ToArray());
+        var total = await dbContext.Database.SqlQuery<int>(countSql).SingleAsync(cancellationToken);
+
+        var skip = (criteria.Page - 1) * criteria.PageSize;
+        var pageParameters = new List<object>(parameters) { skip, criteria.PageSize };
+        var pageSql = FormattableStringFactory.Create(
+            $"{selectBody} ORDER BY Score DESC, AssetId OFFSET {{{parameters.Count}}} ROWS FETCH NEXT {{{parameters.Count + 1}}} ROWS ONLY",
+            pageParameters.ToArray());
+
+        var items = await dbContext.Database.SqlQuery<AssetSearchResultDto>(pageSql).ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
+
+    // Builds a plain SQL LIKE search with a SQL-computed relevance score (exact title +100, title contains +50,
+    // description contains +20 per term). Case-sensitivity follows the ASSET.title/description column collation,
+    // so no LOWER()/UPPER() is applied. Every dynamic value is appended as a "{n}" composite-format placeholder so
+    // SqlQuery parameterizes it - never string-concatenated into the SQL text - keeping the query safe from
+    // injection even with a variable number of terms/tags/filters.
+    private static (string SelectBody, List<object> Parameters) BuildSearchSql(AssetSearchCriteria criteria)
+    {
+        var parameters = new List<object>();
+        var scoreExpr = new System.Text.StringBuilder("CAST(0 AS float)");
+        var termConditions = new System.Text.StringBuilder();
+
+        foreach (var term in criteria.Terms)
+        {
+            parameters.Add(term);
+            var exactPlaceholder = $"{{{parameters.Count - 1}}}";
+            parameters.Add(EscapeLikePattern(term));
+            var likePlaceholder = $"{{{parameters.Count - 1}}}";
+
+            scoreExpr.Append($"""
+                 + CASE WHEN a.title = {exactPlaceholder} THEN 100 ELSE 0 END
+                 + CASE WHEN a.title LIKE '%' + {likePlaceholder} + '%' ESCAPE '\' THEN 50 ELSE 0 END
+                 + CASE WHEN a.description LIKE '%' + {likePlaceholder} + '%' ESCAPE '\' THEN 20 ELSE 0 END
+                """);
+
+            termConditions.Append($"""
+
+                AND (a.title LIKE '%' + {likePlaceholder} + '%' ESCAPE '\' OR a.description LIKE '%' + {likePlaceholder} + '%' ESCAPE '\')
+                """);
+        }
+
+        var sql = new System.Text.StringBuilder();
+        sql.Append($"""
+            SELECT
+                a.asset_id AS AssetId,
+                a.title AS Title,
+                a.description AS Description,
+                {scoreExpr} AS Score
+            FROM ASSET a
+            WHERE 1 = 1
+            """);
+        sql.Append(termConditions);
+
+        foreach (var tag in criteria.Tags)
+        {
+            parameters.Add(tag);
+            var tagPlaceholder = $"{{{parameters.Count - 1}}}";
+            sql.Append($"""
+
+                AND EXISTS (
+                    SELECT 1 FROM ASSET_TAG at
+                    INNER JOIN TAG t ON t.tag_id = at.tag_id
+                    WHERE at.asset_id = a.asset_id AND t.name = {tagPlaceholder}
+                )
+                """);
+        }
+
+        if (criteria.AssetTypeId.HasValue)
+        {
+            parameters.Add(criteria.AssetTypeId.Value);
+            sql.Append($" AND a.asset_type_id = {{{parameters.Count - 1}}}");
+        }
+
+        if (criteria.DomainId.HasValue)
+        {
+            parameters.Add(criteria.DomainId.Value);
+            sql.Append($" AND a.domain_id = {{{parameters.Count - 1}}}");
+        }
+
+        if (criteria.UseCaseId.HasValue)
+        {
+            parameters.Add(criteria.UseCaseId.Value);
+            sql.Append($" AND a.use_case_id = {{{parameters.Count - 1}}}");
+        }
+
+        if (criteria.ToolId.HasValue)
+        {
+            parameters.Add(criteria.ToolId.Value);
+            var toolPlaceholder = $"{{{parameters.Count - 1}}}";
+            sql.Append($"""
+
+                AND EXISTS (
+                    SELECT 1 FROM ASSET_TOOL att WHERE att.asset_id = a.asset_id AND att.tool_id = {toolPlaceholder}
+                )
+                """);
+        }
+
+        var cutoff = GetFreshnessCutoff(criteria.Freshness);
+        if (cutoff.HasValue)
+        {
+            parameters.Add(cutoff.Value);
+            sql.Append($" AND a.created_at >= {{{parameters.Count - 1}}}");
+        }
+
+        return (sql.ToString(), parameters);
+    }
+
+    // Escapes LIKE wildcard characters in a term value so it matches literally; the value itself
+    // is still passed as a query parameter, so this only affects LIKE pattern semantics, not SQL injection safety.
+    private static string EscapeLikePattern(string term) =>
+        term.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_").Replace("[", "\\[");
 
     public async Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> BrowseAsync(BrowseAssetsQuery query, CancellationToken cancellationToken)
     {
@@ -59,16 +182,18 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
 
     private static IQueryable<Asset> ApplyFreshnessFilter(IQueryable<Asset> assets, AssetFreshness? freshness)
     {
-        var cutoff = freshness switch
+        var cutoff = GetFreshnessCutoff(freshness);
+        return cutoff.HasValue ? assets.Where(asset => asset.CreatedAt >= cutoff.Value) : assets;
+    }
+
+    private static DateTime? GetFreshnessCutoff(AssetFreshness? freshness) =>
+        freshness switch
         {
             AssetFreshness.Week => DateTime.UtcNow.AddDays(-7),
             AssetFreshness.Month => DateTime.UtcNow.AddMonths(-1),
             AssetFreshness.Quarter => DateTime.UtcNow.AddMonths(-3),
-            _ => (DateTime?)null
+            _ => null
         };
-
-        return cutoff.HasValue ? assets.Where(asset => asset.CreatedAt >= cutoff.Value) : assets;
-    }
 
     // Relevance falls back to recency when there are no keywords to rank against.
     private IQueryable<Asset> ApplySort(IQueryable<Asset> assets, string? sortBy, string? keywords) =>

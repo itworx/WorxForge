@@ -1,7 +1,12 @@
-﻿using WorxForge.Domain.Commands.Assets;
+﻿using System.Security.Claims;
+using WorxForge.Core.Abstractions;
+using WorxForge.Domain.Commands.Assets;
 using WorxForge.Domain.Commands.Comments;
 using WorxForge.Domain.Commands.Library;
+using WorxForge.Domain.Dtos.Common;
+using WorxForge.Domain.Dtos.Explore;
 using WorxForge.Domain.Queries.Assets;
+using WorxForge.Domain.Queries.Explore;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WorxForge.API.EndpointGroups;
@@ -15,6 +20,12 @@ public static class AssetsEndpointGroup
         group.MapPut("/{assetId:guid}", UpdateAssetAsync);
         group.MapDelete("/{assetId:guid}", DeleteAssetAsync);
         group.MapPost("/preview", PreviewAssetAsync);
+        group.MapGet("/search", SearchAssetsAsync)
+            .WithName("SearchAssets")
+            .WithSummary("Search knowledge assets")
+            .WithDescription("Keyword search over Title/Description plus exact hashtag matching (#tag), combined with the same filters as Explore.")
+            .Produces<PagedResultDto<AssetSearchResultDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized);
         group.MapGet("/{assetId:guid}", GetAssetDetailsAsync);
         group.MapGet("/{assetId:guid}/comments", GetAssetCommentsAsync);
         group.MapPost("/{assetId:guid}/comments", CreateAssetCommentAsync);
@@ -31,6 +42,35 @@ public static class AssetsEndpointGroup
     private static Task<IResult> UpdateAssetAsync(UpdateAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> DeleteAssetAsync([FromBody] DeleteAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> PreviewAssetAsync(PreviewAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
+
+    private static async Task<IResult> SearchAssetsAsync(
+        [AsParameters] AssetFilters filters,
+        ClaimsPrincipal user,
+        IQueryHandler<SearchAssetsQuery, PagedResultDto<AssetSearchResultDto>> handler,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var query = new SearchAssetsQuery
+        {
+            RequestingUserId = userId,
+            Q = filters.Q,
+            AssetTypeId = filters.AssetTypeId,
+            DomainId = filters.DomainId,
+            UseCaseId = filters.UseCaseId,
+            ToolId = filters.ToolId,
+            Freshness = filters.Freshness,
+            Page = filters.Page ?? 1,
+            PageSize = filters.PageSize ?? 12
+        };
+
+        var results = await handler.HandleAsync(query, cancellationToken);
+        return Results.Ok(results);
+    }
+
     private static Task<IResult> GetAssetDetailsAsync([AsParameters] GetAssetDetailsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> GetAssetCommentsAsync([AsParameters] GetAssetCommentsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> CreateAssetCommentAsync(CreateAssetCommentCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();

@@ -28,7 +28,7 @@ public static class ExploreEndpointGroup
     }
 
     private static async Task<IResult> BrowseAssetsAsync(
-        [AsParameters] BrowseAssetsFilters filters,
+        [AsParameters] AssetFilters filters,
         ClaimsPrincipal user,
         IQueryHandler<BrowseAssetsQuery, PagedResultDto<AssetSummaryDto>> handler,
         CancellationToken cancellationToken)
