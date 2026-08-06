@@ -76,6 +76,16 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
         return await SelectAssetSummaries(recentlyUpdatedAssets, userId).ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<AssetSummaryDto>> GetSavedAssetsAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var savedAssets = dbContext.Bookmarks
+            .AsNoTracking()
+            .Where(bookmark => bookmark.UserId == userId)
+            .Join(dbContext.Assets.AsNoTracking(), bookmark => bookmark.AssetId, asset => asset.AssetId, (bookmark, asset) => asset);
+
+        return await SelectAssetSummaries(savedAssets, userId).ToListAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<AssetSummaryDto>> GetRecommendedForYouAsync(Guid userId, int limit, CancellationToken cancellationToken)
     {
         var likedAssetAffinities = dbContext.Reactions
