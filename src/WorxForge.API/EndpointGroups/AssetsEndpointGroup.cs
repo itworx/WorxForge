@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using WorxForge.Core.Abstractions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using WorxForge.Domain.Commands.Assets;
@@ -23,17 +24,13 @@ public static class AssetsEndpointGroup
         group.MapPut("/{assetId:guid}", UpdateAssetAsync);
         group.MapDelete("/{assetId:guid}", DeleteAssetAsync);
         group.MapPost("/preview", PreviewAssetAsync);
-        group.MapGet("/{assetId:guid}", GetAssetDetailsAsync);
         group.MapGet("/{assetId:guid}/comments", GetAssetCommentsAsync);
         group.MapPost("/{assetId:guid}/comments", CreateAssetCommentAsync);
         group.MapDelete("/{assetId:guid}/comments/{commentId:guid}", DeleteAssetCommentAsync);
         group.MapPost("/{assetId:guid}/bookmark", BookmarkAssetAsync);
         group.MapDelete("/{assetId:guid}/bookmark", RemoveBookmarkAsync);
-        group.MapPost("/{assetId:guid}/follow", FollowAssetAsync);
-        group.MapDelete("/{assetId:guid}/follow", UnfollowAssetAsync);
-        group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync)
-            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
-        group.MapDelete("/{assetId:guid}/reaction", RemoveAssetReactionAsync)
+        group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync);
+        group.MapGet("/{assetId:guid}", GetAssetDetailsAsync)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         return group;
     }
@@ -42,14 +39,46 @@ public static class AssetsEndpointGroup
     private static Task<IResult> UpdateAssetAsync(UpdateAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> DeleteAssetAsync([FromBody] DeleteAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> PreviewAssetAsync(PreviewAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static Task<IResult> GetAssetDetailsAsync([AsParameters] GetAssetDetailsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
+    private static async Task<IResult> GetAssetDetailsAsync(
+        Guid assetId,
+        ClaimsPrincipal user,
+        IRequestValidator<GetAssetDetailsQuery> validator,
+        IQueryHandler<GetAssetDetailsQuery, AssetDetailsDto> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var query = new GetAssetDetailsQuery
+        {
+            AssetId = assetId,
+            RequestingUserId = userId
+        };
+
+        try
+        {
+            await validator.ValidateAsync(query, cancellationToken);
+            var details = await handler.HandleAsync(query, cancellationToken);
+            return Results.Ok(details);
+        }
+        catch (ArgumentException exception)
+        {
+            return Results.BadRequest(new { message = exception.Message });
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return Results.NotFound(new { message = exception.Message });
+        }
+    }
     private static Task<IResult> GetAssetCommentsAsync([AsParameters] GetAssetCommentsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> CreateAssetCommentAsync(CreateAssetCommentCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> DeleteAssetCommentAsync([FromBody] DeleteAssetCommentCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> BookmarkAssetAsync(BookmarkAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> RemoveBookmarkAsync([FromBody] RemoveBookmarkCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static Task<IResult> FollowAssetAsync(FollowAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static Task<IResult> UnfollowAssetAsync([FromBody] UnfollowAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
+    private static Task<IResult> ReactToAssetAsync(ReactToAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static async Task<IResult> ReactToAssetAsync(
         Guid assetId,
         ReactToAssetRequest request,
