@@ -15,6 +15,9 @@ public static class SearchQueryParser
         // Defensive: query binding already URL-decodes, but this guards against a raw/undecoded "%23devops" reaching here.
         var decoded = Uri.UnescapeDataString(rawQuery);
 
+        // Strip control/non-printable characters (e.g. NUL, CR/LF) before tokenizing - defense-in-depth, not an injection fix (LIKE values are already parameterized).
+        decoded = new string(decoded.Where(c => !char.IsControl(c)).ToArray());
+
         var terms = new List<string>();
         var hashtags = new List<string>();
         var seenHashtags = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

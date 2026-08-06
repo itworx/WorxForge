@@ -13,6 +13,8 @@ namespace WorxForge.API.EndpointGroups;
 
 public static class AssetsEndpointGroup
 {
+    private const int MaxSearchQueryLength = 200;
+
     public static RouteGroupBuilder MapAssetsEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/assets");
@@ -25,6 +27,7 @@ public static class AssetsEndpointGroup
             .WithSummary("Search knowledge assets")
             .WithDescription("Keyword search over Title/Description plus exact hashtag matching (#tag), combined with the same filters as Explore.")
             .Produces<PagedResultDto<AssetSummaryDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
         group.MapGet("/{assetId:guid}", GetAssetDetailsAsync);
         group.MapGet("/{assetId:guid}/comments", GetAssetCommentsAsync);
@@ -52,6 +55,11 @@ public static class AssetsEndpointGroup
         if (!Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
         {
             return Results.Unauthorized();
+        }
+
+        if (filters.Q is { Length: > MaxSearchQueryLength })
+        {
+            return Results.BadRequest($"Query must not exceed {MaxSearchQueryLength} characters.");
         }
 
         var query = new SearchAssetsQuery
