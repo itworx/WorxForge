@@ -21,6 +21,5 @@ public sealed class AssetDetailsDto
     public int CommentCount { get; init; }
     public int ViewCount { get; init; }
     public bool IsBookmarked { get; init; }
-    public bool IsFollowing { get; init; }
 }
 

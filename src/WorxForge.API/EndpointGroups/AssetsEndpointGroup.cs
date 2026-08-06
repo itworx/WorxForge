@@ -1,8 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using WorxForge.Core.Abstractions;
 ﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc;
+using WorxForge.Core.Abstractions;
 using WorxForge.Domain.Commands.Assets;
 using WorxForge.Domain.Commands.Comments;
 using WorxForge.Domain.Commands.Library;
@@ -13,10 +11,7 @@ using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Queries.Assets;
 using WorxForge.Domain.Queries.Lookup;
 using WorxForge.API.Models.Requests.Assets;
-using WorxForge.Domain.Queries.Assets;
 using WorxForge.API.Models.Requests.Comments;
-using WorxForge.Core.Abstractions;
-using Microsoft.AspNetCore.Mvc;
 
 namespace WorxForge.API.EndpointGroups;
 
@@ -47,8 +42,6 @@ public static class AssetsEndpointGroup
         group.MapDelete("/{assetId:guid}/comments/{commentId:guid}", DeleteAssetCommentAsync);
         group.MapPost("/{assetId:guid}/bookmark", BookmarkAssetAsync);
         group.MapDelete("/{assetId:guid}/bookmark", RemoveBookmarkAsync);
-        group.MapPost("/{assetId:guid}/follow", FollowAssetAsync);
-        group.MapDelete("/{assetId:guid}/follow", UnfollowAssetAsync);
         group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         group.MapDelete("/{assetId:guid}/reaction", RemoveAssetReactionAsync)
@@ -140,8 +133,6 @@ public static class AssetsEndpointGroup
     private static Task<IResult> DeleteAssetCommentAsync([FromBody] DeleteAssetCommentCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> BookmarkAssetAsync(BookmarkAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> RemoveBookmarkAsync([FromBody] RemoveBookmarkCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static Task<IResult> FollowAssetAsync(FollowAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static Task<IResult> UnfollowAssetAsync([FromBody] UnfollowAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static async Task<IResult> ReactToAssetAsync(
         Guid assetId,
         ReactToAssetRequest request,
