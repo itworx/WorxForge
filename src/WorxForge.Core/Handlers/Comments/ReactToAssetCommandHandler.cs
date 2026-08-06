@@ -5,8 +5,8 @@ using WorxForge.Domain.Dtos.Assets;
 
 namespace WorxForge.Core.Handlers.Comments;
 
-public sealed class ReactToAssetCommandHandler(ICommentService commentService) : ICommandHandler<ReactToAssetCommand, AssetReactionDto>
+public sealed class ReactToAssetCommandHandler(IReactionService reactionService) : ICommandHandler<ReactToAssetCommand, AssetReactionDto>
 {
     public Task<AssetReactionDto> HandleAsync(ReactToAssetCommand command, CancellationToken cancellationToken) =>
-        commentService.ReactToAssetAsync(command.UserId, command.AssetId, command.ReactionType, cancellationToken);
+    reactionService.ReactToAssetAsync(command.UserId, command.AssetId, command.ReactionType, cancellationToken);
 }

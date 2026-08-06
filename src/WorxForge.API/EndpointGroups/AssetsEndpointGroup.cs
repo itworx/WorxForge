@@ -33,6 +33,8 @@ public static class AssetsEndpointGroup
         group.MapDelete("/{assetId:guid}/follow", UnfollowAssetAsync);
         group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapDelete("/{assetId:guid}/reaction", RemoveAssetReactionAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         return group;
     }
 
@@ -86,6 +88,41 @@ public static class AssetsEndpointGroup
         catch (InvalidOperationException exception)
         {
             return Results.BadRequest(new { message = exception.Message });
+        }
+    }
+
+    private static async Task<IResult> RemoveAssetReactionAsync(
+        Guid assetId,
+        ClaimsPrincipal user,
+        IRequestValidator<RemoveAssetReactionCommand> validator,
+        ICommandHandler<RemoveAssetReactionCommand, AssetReactionDto> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var command = new RemoveAssetReactionCommand
+        {
+            UserId = userId,
+            AssetId = assetId
+        };
+
+        try
+        {
+            await validator.ValidateAsync(command, cancellationToken);
+            var response = await handler.HandleAsync(command, cancellationToken);
+            return Results.Ok(response);
+        }
+        catch (RequestValidationException validationException)
+        {
+            return Results.ValidationProblem(validationException.Errors);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return Results.NotFound(new { message = exception.Message });
         }
     }
 }
