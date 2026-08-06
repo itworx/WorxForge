@@ -79,10 +79,6 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
             .AsNoTracking()
             .AnyAsync(bookmark => bookmark.AssetId == asset.AssetId && bookmark.UserId == requestingUserId, cancellationToken);
 
-        var isFollowing = await dbContext.AssetFollows
-            .AsNoTracking()
-            .AnyAsync(assetFollow => assetFollow.AssetId == asset.AssetId && assetFollow.UserId == requestingUserId, cancellationToken);
-
         return new AssetDetailsDto
         {
             AssetId = asset.AssetId,
@@ -103,8 +99,7 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
             ReactionCount = reactionCount,
             CommentCount = commentCount,
             ViewCount = viewCount,
-            IsBookmarked = isBookmarked,
-            IsFollowing = isFollowing
+            IsBookmarked = isBookmarked
         };
     }
     public Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> SearchAsync(SearchAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();

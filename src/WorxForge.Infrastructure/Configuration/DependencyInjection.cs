@@ -27,7 +27,6 @@ public static class DependencyInjection
         services.AddScoped<IAssetRepository, AssetRepository>();
         services.AddScoped<ICommentRepository, CommentRepository>();
         services.AddScoped<IBookmarkRepository, BookmarkRepository>();
-        services.AddScoped<IAssetFollowRepository, AssetFollowRepository>();
         services.AddScoped<IReactionRepository, ReactionRepository>();
         services.AddScoped<IAssetViewRepository, AssetViewRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();

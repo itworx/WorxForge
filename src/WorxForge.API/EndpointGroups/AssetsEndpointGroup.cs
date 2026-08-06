@@ -24,10 +24,6 @@ public static class AssetsEndpointGroup
         group.MapDelete("/{assetId:guid}/comments/{commentId:guid}", DeleteAssetCommentAsync);
         group.MapPost("/{assetId:guid}/bookmark", BookmarkAssetAsync);
         group.MapDelete("/{assetId:guid}/bookmark", RemoveBookmarkAsync);
-        group.MapPost("/{assetId:guid}/follow", FollowAssetAsync)
-            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
-        group.MapDelete("/{assetId:guid}/follow", UnfollowAssetAsync)
-            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync);
         group.MapGet("/{assetId:guid}", GetAssetDetailsAsync)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
@@ -77,74 +73,5 @@ public static class AssetsEndpointGroup
     private static Task<IResult> DeleteAssetCommentAsync([FromBody] DeleteAssetCommentCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> BookmarkAssetAsync(BookmarkAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> RemoveBookmarkAsync([FromBody] RemoveBookmarkCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static async Task<IResult> FollowAssetAsync(
-        Guid assetId,
-        ClaimsPrincipal user,
-        IRequestValidator<FollowAssetCommand> validator,
-        ICommandHandler<FollowAssetCommand> handler,
-        CancellationToken cancellationToken)
-    {
-        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
-        if (!Guid.TryParse(userIdValue, out var userId))
-        {
-            return Results.Unauthorized();
-        }
-
-        var command = new FollowAssetCommand
-        {
-            UserId = userId,
-            AssetId = assetId
-        };
-
-        try
-        {
-            await validator.ValidateAsync(command, cancellationToken);
-            await handler.HandleAsync(command, cancellationToken);
-            return Results.NoContent();
-        }
-        catch (ArgumentException exception)
-        {
-            return Results.BadRequest(new { message = exception.Message });
-        }
-        catch (KeyNotFoundException exception)
-        {
-            return Results.NotFound(new { message = exception.Message });
-        }
-    }
-
-    private static async Task<IResult> UnfollowAssetAsync(
-        Guid assetId,
-        ClaimsPrincipal user,
-        IRequestValidator<UnfollowAssetCommand> validator,
-        ICommandHandler<UnfollowAssetCommand> handler,
-        CancellationToken cancellationToken)
-    {
-        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
-        if (!Guid.TryParse(userIdValue, out var userId))
-        {
-            return Results.Unauthorized();
-        }
-
-        var command = new UnfollowAssetCommand
-        {
-            UserId = userId,
-            AssetId = assetId
-        };
-
-        try
-        {
-            await validator.ValidateAsync(command, cancellationToken);
-            await handler.HandleAsync(command, cancellationToken);
-            return Results.NoContent();
-        }
-        catch (ArgumentException exception)
-        {
-            return Results.BadRequest(new { message = exception.Message });
-        }
-        catch (KeyNotFoundException exception)
-        {
-            return Results.NotFound(new { message = exception.Message });
-        }
-    }
     private static Task<IResult> ReactToAssetAsync(ReactToAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
 }
