@@ -1,7 +1,15 @@
-﻿using WorxForge.Domain.Commands.Assets;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.HttpResults;
+using WorxForge.Domain.Commands.Assets;
 using WorxForge.Domain.Commands.Comments;
 using WorxForge.Domain.Commands.Library;
+using WorxForge.Domain.Constants;
+using WorxForge.Domain.Dtos.Assets;
+using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Queries.Assets;
+using WorxForge.API.Models.Requests.Comments;
+using WorxForge.Core.Abstractions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WorxForge.API.EndpointGroups;
@@ -23,7 +31,8 @@ public static class AssetsEndpointGroup
         group.MapDelete("/{assetId:guid}/bookmark", RemoveBookmarkAsync);
         group.MapPost("/{assetId:guid}/follow", FollowAssetAsync);
         group.MapDelete("/{assetId:guid}/follow", UnfollowAssetAsync);
-        group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync);
+        group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         return group;
     }
 
@@ -39,5 +48,44 @@ public static class AssetsEndpointGroup
     private static Task<IResult> RemoveBookmarkAsync([FromBody] RemoveBookmarkCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> FollowAssetAsync(FollowAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> UnfollowAssetAsync([FromBody] UnfollowAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static Task<IResult> ReactToAssetAsync(ReactToAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
+    private static async Task<IResult> ReactToAssetAsync(
+        Guid assetId,
+        ReactToAssetRequest request,
+        ClaimsPrincipal user,
+        IRequestValidator<ReactToAssetCommand> validator,
+        ICommandHandler<ReactToAssetCommand, AssetReactionDto> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var command = new ReactToAssetCommand
+        {
+            UserId = userId,
+            AssetId = assetId,
+            ReactionType = request.ReactionType
+        };
+
+        try
+        {
+            await validator.ValidateAsync(command, cancellationToken);
+            var response = await handler.HandleAsync(command, cancellationToken);
+            return Results.Ok(response);
+        }
+        catch (RequestValidationException validationException)
+        {
+            return Results.ValidationProblem(validationException.Errors);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return Results.NotFound(new { message = exception.Message });
+        }
+        catch (InvalidOperationException exception)
+        {
+            return Results.BadRequest(new { message = exception.Message });
+        }
+    }
 }
