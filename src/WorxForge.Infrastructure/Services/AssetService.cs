@@ -17,8 +17,22 @@ public sealed class AssetService(
     IToolRepository toolRepository,
     ITagRepository tagRepository) : IAssetService
 {
-    public Task<AssetDetailsDto> GetAssetAsync(Guid assetId, Guid requestingUserId, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task<AssetDetailsDto> GetMyAssetAsync(Guid assetId, Guid ownerId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public async Task<AssetDetailsDto> GetAssetAsync(Guid assetId, Guid requestingUserId, CancellationToken cancellationToken)
+    {
+        var details = await assetRepository.GetDetailsAsync(assetId, requestingUserId, cancellationToken);
+        return details ?? throw new KeyNotFoundException($"Asset '{assetId}' was not found.");
+    }
+
+    public async Task<AssetDetailsDto> GetMyAssetAsync(Guid assetId, Guid ownerId, CancellationToken cancellationToken)
+    {
+        var details = await GetAssetAsync(assetId, ownerId, cancellationToken);
+        if (details.AuthorId != ownerId)
+        {
+            throw new UnauthorizedAccessException("You are not allowed to access this asset as owner.");
+        }
+
+        return details;
+    }
     public Task<PagedResultDto<MyAssetDto>> GetMyAssetsAsync(Guid userId, int page, int pageSize, string? sortBy, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<PagedResultDto<AssetSummaryDto>> SearchAsync(SearchAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<PagedResultDto<AssetSummaryDto>> BrowseAsync(BrowseAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
