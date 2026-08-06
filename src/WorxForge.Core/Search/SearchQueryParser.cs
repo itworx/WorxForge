@@ -29,7 +29,7 @@ public static class SearchQueryParser
 
             if (token[0] == '#')
             {
-                var tag = token[1..].Trim();
+                var tag = token[1..].Trim().ToLowerInvariant();
                 if (tag.Length > 0 && seenHashtags.Add(tag))
                 {
                     hashtags.Add(tag);
