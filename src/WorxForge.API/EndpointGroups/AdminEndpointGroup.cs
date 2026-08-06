@@ -1,4 +1,5 @@
 ﻿using WorxForge.Domain.Commands.Admin;
+using WorxForge.Domain.Constants;
 using WorxForge.Domain.Queries.Admin;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,7 +9,7 @@ public static class AdminEndpointGroup
 {
     public static RouteGroupBuilder MapAdminEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/admin");
+        var group = app.MapGroup("/api/admin").RequireAuthorization(PolicyConstants.AdminOnly);
         group.MapGet("/users", GetAdminUsersAsync);
         group.MapPost("/users", CreateUserByAdminAsync);
         group.MapDelete("/users/{userId:guid}", DeleteUserByAdminAsync);
@@ -24,6 +25,7 @@ public static class AdminEndpointGroup
     private static Task<IResult> GetAdminUsersAsync([AsParameters] GetAdminUsersQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> CreateUserByAdminAsync(CreateUserByAdminCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> DeleteUserByAdminAsync([FromBody] DeleteUserByAdminCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
+
     private static Task<IResult> GetAdminAssetsAsync([AsParameters] GetAdminAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> DeleteAssetByAdminAsync([FromBody] DeleteAssetByAdminCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> GetAdminCommentsAsync([AsParameters] GetAdminCommentsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
