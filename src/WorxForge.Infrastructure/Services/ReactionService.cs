@@ -16,11 +16,6 @@ public sealed class ReactionService(IAssetRepository assetRepository, IReactionR
             throw new KeyNotFoundException($"Asset '{assetId}' was not found.");
         }
 
-        if (asset.AuthorId == userId)
-        {
-            throw new InvalidOperationException("Users cannot react to their own assets.");
-        }
-
         var normalizedReactionType = ReactionTypes.Normalize(reactionType);
         var existingReaction = await reactionRepository.GetAsync(userId, assetId, cancellationToken);
 
