@@ -8,8 +8,11 @@ namespace WorxForge.Infrastructure.Repositories;
 
 public sealed class BusinessDomainRepository(WorxForgeDbContext dbContext) : IBusinessDomainRepository
 {
-    public Task<IReadOnlyList<BusinessDomain>> GetAllAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task<BusinessDomain?> GetByIdAsync(Guid id, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public async Task<IReadOnlyList<BusinessDomain>> GetAllAsync(CancellationToken cancellationToken) =>
+        await dbContext.BusinessDomains.OrderBy(x => x.Name).ToListAsync(cancellationToken);
+
+    public Task<BusinessDomain?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
+        dbContext.BusinessDomains.FirstOrDefaultAsync(x => x.DomainId == id, cancellationToken);
 
     public async Task<IReadOnlyList<DomainSummaryDto>> GetDomainSummariesAsync(CancellationToken cancellationToken)
     {
