@@ -21,6 +21,7 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
     public DbSet<Reaction> Reactions => Set<Reaction>();
     public DbSet<AssetView> AssetViews => Set<AssetView>();
     public DbSet<Bookmark> Bookmarks => Set<Bookmark>();
+    public DbSet<AssetFollow> AssetFollows => Set<AssetFollow>();
     public DbSet<Report> Reports => Set<Report>();
     public DbSet<ReportAsset> ReportAssets => Set<ReportAsset>();
     public DbSet<ReportComment> ReportComments => Set<ReportComment>();
@@ -42,6 +43,7 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
         ConfigureReaction(modelBuilder.Entity<Reaction>());
         ConfigureAssetView(modelBuilder.Entity<AssetView>());
         ConfigureBookmark(modelBuilder.Entity<Bookmark>());
+        ConfigureAssetFollow(modelBuilder.Entity<AssetFollow>());
         ConfigureReport(modelBuilder.Entity<Report>());
         ConfigureReportAsset(modelBuilder.Entity<ReportAsset>());
         ConfigureReportComment(modelBuilder.Entity<ReportComment>());
@@ -211,6 +213,21 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
     private static void ConfigureBookmark(EntityTypeBuilder<Bookmark> entity)
     {
         entity.ToTable("BOOKMARK");
+        entity.HasKey(e => new { e.UserId, e.AssetId });
+        entity.HasOne<User>()
+            .WithMany()
+            .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.NoAction);
+        entity.HasOne<Asset>()
+            .WithMany()
+            .HasForeignKey(e => e.AssetId)
+            .OnDelete(DeleteBehavior.NoAction);
+        ApplySnakeCaseColumnNames(entity);
+    }
+
+    private static void ConfigureAssetFollow(EntityTypeBuilder<AssetFollow> entity)
+    {
+        entity.ToTable("ASSET_FOLLOW");
         entity.HasKey(e => new { e.UserId, e.AssetId });
         entity.HasOne<User>()
             .WithMany()

@@ -7,6 +7,16 @@ public sealed class FollowAssetCommandValidator : IRequestValidator<FollowAssetC
 {
     public Task ValidateAsync(FollowAssetCommand request, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        if (request.UserId == Guid.Empty)
+        {
+            throw new ArgumentException("UserId is required.", nameof(request.UserId));
+        }
+
+        if (request.AssetId == Guid.Empty)
+        {
+            throw new ArgumentException("AssetId is required.", nameof(request.AssetId));
+        }
+
+        return Task.CompletedTask;
     }
 }

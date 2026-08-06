@@ -80,6 +80,23 @@ namespace WorxForge.Infrastructure.Migrations
                     b.ToTable("ASSET", (string)null);
                 });
 
+            modelBuilder.Entity("WorxForge.Domain.Entities.AssetFollow", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("asset_id");
+
+                    b.HasKey("UserId", "AssetId");
+
+                    b.HasIndex("AssetId");
+
+                    b.ToTable("ASSET_FOLLOW", (string)null);
+                });
+
             modelBuilder.Entity("WorxForge.Domain.Entities.AssetTag", b =>
                 {
                     b.Property<Guid>("AssetId")
@@ -575,6 +592,21 @@ namespace WorxForge.Infrastructure.Migrations
                     b.HasOne("WorxForge.Domain.Entities.UseCase", null)
                         .WithMany()
                         .HasForeignKey("UseCaseId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("WorxForge.Domain.Entities.AssetFollow", b =>
+                {
+                    b.HasOne("WorxForge.Domain.Entities.Asset", null)
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("WorxForge.Domain.Entities.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
