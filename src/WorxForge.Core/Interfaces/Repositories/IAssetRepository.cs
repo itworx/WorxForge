@@ -16,6 +16,8 @@ public interface IAssetRepository
     Task<IReadOnlyList<AssetSummaryDto>> GetRecentlyUpdatedAsync(Guid userId, int limit, CancellationToken cancellationToken);
     Task<IReadOnlyList<AssetSummaryDto>> GetRecommendedForYouAsync(Guid userId, int limit, CancellationToken cancellationToken);
     Task<IReadOnlyList<AssetSummaryDto>> GetPopularAcrossTeamsAsync(Guid userId, int limit, CancellationToken cancellationToken);
+    Task<bool> ExistsByUniqueNameAsync(string uniqueName, CancellationToken cancellationToken);
+    Task<Guid> CreateAsync(Asset asset, IEnumerable<Guid> toolIds, IEnumerable<Guid> tagIds, CancellationToken cancellationToken);
     Task AddAsync(Asset asset, CancellationToken cancellationToken);
     Task UpdateAsync(Asset asset, CancellationToken cancellationToken);
     Task DeleteAsync(Guid assetId, CancellationToken cancellationToken);
