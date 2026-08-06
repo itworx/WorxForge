@@ -42,9 +42,7 @@ namespace WorxForge.Infrastructure.Migrations
                         .HasColumnName("created_at");
 
                     b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)")
+                        .HasColumnType("nvarchar(max)")
                         .HasColumnName("description");
 
                     b.Property<Guid>("DomainId")
@@ -56,11 +54,10 @@ namespace WorxForge.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("markdown_content");
 
-                    b.Property<string>("UniqueName")
+                    b.Property<string>("Title")
                         .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)")
-                        .HasColumnName("unique_name");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("title");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2")
@@ -77,9 +74,6 @@ namespace WorxForge.Infrastructure.Migrations
                     b.HasIndex("AuthorId");
 
                     b.HasIndex("DomainId");
-
-                    b.HasIndex("UniqueName")
-                        .IsUnique();
 
                     b.HasIndex("UseCaseId");
 
@@ -138,6 +132,23 @@ namespace WorxForge.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("ASSET_TYPE", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            AssetTypeId = new Guid("11111111-1111-1111-1111-111111111101"),
+                            Name = "Prompt"
+                        },
+                        new
+                        {
+                            AssetTypeId = new Guid("11111111-1111-1111-1111-111111111102"),
+                            Name = "Skill"
+                        },
+                        new
+                        {
+                            AssetTypeId = new Guid("11111111-1111-1111-1111-111111111103"),
+                            Name = "Agent"
+                        });
                 });
 
             modelBuilder.Entity("WorxForge.Domain.Entities.AssetView", b =>
@@ -235,6 +246,23 @@ namespace WorxForge.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("DOMAIN", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            DomainId = new Guid("21111111-1111-1111-1111-111111111101"),
+                            Name = "Development"
+                        },
+                        new
+                        {
+                            DomainId = new Guid("21111111-1111-1111-1111-111111111102"),
+                            Name = "Quality Assurance"
+                        },
+                        new
+                        {
+                            DomainId = new Guid("21111111-1111-1111-1111-111111111103"),
+                            Name = "DevOps"
+                        });
                 });
 
             modelBuilder.Entity("WorxForge.Domain.Entities.Comment", b =>
@@ -480,6 +508,23 @@ namespace WorxForge.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("TOOL", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            ToolId = new Guid("41111111-1111-1111-1111-111111111101"),
+                            Name = "WorxGPT"
+                        },
+                        new
+                        {
+                            ToolId = new Guid("41111111-1111-1111-1111-111111111102"),
+                            Name = "Claude Code"
+                        },
+                        new
+                        {
+                            ToolId = new Guid("41111111-1111-1111-1111-111111111103"),
+                            Name = "GitHub Copilot"
+                        });
                 });
 
             modelBuilder.Entity("WorxForge.Domain.Entities.UseCase", b =>
@@ -500,6 +545,23 @@ namespace WorxForge.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("USE_CASE", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            UseCaseId = new Guid("31111111-1111-1111-1111-111111111101"),
+                            Name = "Code generation"
+                        },
+                        new
+                        {
+                            UseCaseId = new Guid("31111111-1111-1111-1111-111111111102"),
+                            Name = "Code review"
+                        },
+                        new
+                        {
+                            UseCaseId = new Guid("31111111-1111-1111-1111-111111111103"),
+                            Name = "Testing"
+                        });
                 });
 
             modelBuilder.Entity("WorxForge.Domain.Entities.User", b =>

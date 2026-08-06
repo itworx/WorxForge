@@ -18,11 +18,11 @@ public sealed class CreateAssetCommandValidator : IRequestValidator<CreateAssetC
         if (request.AuthorId == Guid.Empty)
             throw new ValidationException("Author is required.");
 
-        if (string.IsNullOrWhiteSpace(request.UniqueName))
-            throw new ValidationException("Unique name is required.");
+        if (string.IsNullOrWhiteSpace(request.Title))
+            throw new ValidationException("Title is required.");
 
-        if (request.UniqueName.Length > UniqueNameMaxLength)
-            throw new ValidationException($"Unique name must not exceed {UniqueNameMaxLength} characters.");
+        if (request.Title.Length > UniqueNameMaxLength)
+            throw new ValidationException($"Title must not exceed {UniqueNameMaxLength} characters.");
 
         if (string.IsNullOrWhiteSpace(request.Description))
             throw new ValidationException("Description is required.");

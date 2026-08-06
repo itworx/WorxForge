@@ -3,7 +3,7 @@
 public sealed class AdminAssetDto
 {
     public Guid AssetId { get; init; }
-    public string UniqueName { get; init; } = string.Empty;
+    public string Title { get; init; } = string.Empty;
     public string AuthorUsername { get; init; } = string.Empty;
     public string AssetTypeName { get; init; } = string.Empty;
     public DateTime CreatedAt { get; init; }

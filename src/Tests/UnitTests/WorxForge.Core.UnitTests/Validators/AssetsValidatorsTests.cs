@@ -10,7 +10,7 @@ public sealed class AssetsValidatorsTests
     // -- CreateAssetCommandValidator -------------------------------------------
 
     private static CreateAssetCommand ValidCreateCommand(
-        string uniqueName = "my-asset",
+        string title = "my-asset",
         string description = "A valid description.",
         string markdownContent = "# Hello",
         int toolCount = 1,
@@ -18,7 +18,7 @@ public sealed class AssetsValidatorsTests
         Guid? authorId = null) => new()
     {
         AuthorId = authorId ?? Guid.NewGuid(),
-        UniqueName = uniqueName,
+        Title = title,
         Description = description,
         MarkdownContent = markdownContent,
         AssetTypeId = Guid.NewGuid(),
@@ -42,7 +42,7 @@ public sealed class AssetsValidatorsTests
     public async Task CreateAssetValidator_ShouldThrow_WhenUniqueNameIsEmpty(string name)
     {
         var validator = new CreateAssetCommandValidator();
-        var act = () => validator.ValidateAsync(ValidCreateCommand(uniqueName: name), CancellationToken.None);
+        var act = () => validator.ValidateAsync(ValidCreateCommand(title: name), CancellationToken.None);
         await act.Should().ThrowAsync<ValidationException>();
     }
 
@@ -50,7 +50,7 @@ public sealed class AssetsValidatorsTests
     public async Task CreateAssetValidator_ShouldThrow_WhenUniqueNameExceedsMaxLength()
     {
         var validator = new CreateAssetCommandValidator();
-        var act = () => validator.ValidateAsync(ValidCreateCommand(uniqueName: new string('x', 201)), CancellationToken.None);
+        var act = () => validator.ValidateAsync(ValidCreateCommand(title: new string('x', 201)), CancellationToken.None);
         await act.Should().ThrowAsync<ValidationException>();
     }
 
@@ -88,7 +88,7 @@ public sealed class AssetsValidatorsTests
         var command = new CreateAssetCommand
         {
             AuthorId = Guid.NewGuid(),
-            UniqueName = "asset",
+            Title = "asset",
             Description = "desc",
             MarkdownContent = "# md",
             AssetTypeId = Guid.NewGuid(),

@@ -2,8 +2,8 @@
 
 public sealed class CreateAssetRequest
 {
-    public string UniqueName { get; init; } = string.Empty;
-    public string Description { get; init; } = string.Empty;
+    public string Title { get; init; } = string.Empty;
+    public string? Description { get; init; }
     public string MarkdownContent { get; init; } = string.Empty;
     public Guid AssetTypeId { get; init; }
     public Guid DomainId { get; init; }

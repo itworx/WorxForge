@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using WorxForge.Core.Interfaces.Repositories;
+﻿using WorxForge.Core.Interfaces.Repositories;
 using WorxForge.Core.Interfaces.Services;
 using WorxForge.Domain.Commands.Assets;
 using WorxForge.Domain.Dtos.Assets;
@@ -29,9 +28,6 @@ public sealed class AssetService(
 
     public async Task<Guid> CreateAsync(CreateAssetCommand command, CancellationToken cancellationToken)
     {
-        if (await assetRepository.ExistsByUniqueNameAsync(command.UniqueName, cancellationToken))
-            throw new ConflictException($"An asset with the name '{command.UniqueName}' already exists.");
-
         if (await assetTypeRepository.GetByIdAsync(command.AssetTypeId, cancellationToken) is null)
             throw new NotFoundException($"Asset type '{command.AssetTypeId}' was not found.");
 
@@ -67,7 +63,7 @@ public sealed class AssetService(
         {
             AssetId = Guid.NewGuid(),
             AuthorId = command.AuthorId,
-            UniqueName = command.UniqueName,
+            Title = command.Title,
             Description = command.Description,
             MarkdownContent = command.MarkdownContent,
             AssetTypeId = command.AssetTypeId,
@@ -77,19 +73,6 @@ public sealed class AssetService(
             UpdatedAt = DateTime.UtcNow
         };
 
-        try
-        {
-            return await assetRepository.CreateAsync(asset, toolIds, tagIds, cancellationToken);
-        }
-        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
-        {
-            // Race condition: another request committed the same UniqueName between our check and our insert.
-            throw new ConflictException($"An asset with the name '{command.UniqueName}' already exists.");
-        }
+        return await assetRepository.CreateAsync(asset, toolIds, tagIds, cancellationToken);
     }
-
-    // SQL Server error number 2601 = unique index violation; 2627 = unique constraint violation.
-    private static bool IsUniqueConstraintViolation(DbUpdateException ex) =>
-        ex.InnerException?.Message.Contains("unique_name", StringComparison.OrdinalIgnoreCase) == true ||
-        ex.InnerException?.Message.Contains("IX_ASSET_unique_name", StringComparison.OrdinalIgnoreCase) == true;
 }

@@ -13,7 +13,7 @@ public sealed class AssetServiceTests
     private static CreateAssetCommand ValidCommand(IReadOnlyList<Guid>? toolIds = null, IReadOnlyList<string>? tags = null) => new()
     {
         AuthorId = Guid.NewGuid(),
-        UniqueName = "my-unique-asset",
+        Title = "my-unique-asset",
         Description = "A description.",
         MarkdownContent = "# Content",
         AssetTypeId = Guid.NewGuid(),
@@ -74,19 +74,6 @@ public sealed class AssetServiceTests
         }
 
         return new AssetService(assetRepo.Object, assetTypeRepo.Object, domainRepo.Object, useCaseRepo.Object, toolRepo.Object, tagRepo.Object);
-    }
-
-    [Fact]
-    public async Task CreateAsync_ShouldThrowConflictException_WhenUniqueNameAlreadyExists()
-    {
-        var assetRepo = new Mock<IAssetRepository>();
-        assetRepo.Setup(r => r.ExistsByUniqueNameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                 .ReturnsAsync(true);
-
-        var service = BuildService(assetRepo: assetRepo);
-        var act = () => service.CreateAsync(ValidCommand(), CancellationToken.None);
-
-        await act.Should().ThrowAsync<ConflictException>();
     }
 
     [Fact]

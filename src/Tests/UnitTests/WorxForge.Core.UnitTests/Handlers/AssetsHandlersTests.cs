@@ -1,4 +1,4 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Moq;
 using WorxForge.Core.Abstractions;
 using WorxForge.Core.Handlers.Assets;
@@ -11,7 +11,7 @@ namespace WorxForge.Core.UnitTests;
 
 public sealed class AssetsHandlersTests
 {
-    // ── UploadMarkdownFileCommandHandler ──────────────────────────────────────
+    // -- UploadMarkdownFileCommandHandler --------------------------------------
 
     [Fact]
     public async Task UploadMarkdownHandler_ShouldReturn_MarkdownContent_WhenFileIsValid()
@@ -60,7 +60,7 @@ public sealed class AssetsHandlersTests
         await act.Should().ThrowAsync<ValidationException>();
     }
 
-    // ── CreateAssetCommandHandler ─────────────────────────────────────────────
+    // -- CreateAssetCommandHandler ---------------------------------------------
 
     [Fact]
     public async Task CreateAssetHandler_ShouldReturn_AssetId_WhenCommandIsValid()
@@ -75,7 +75,7 @@ public sealed class AssetsHandlersTests
         var command = new CreateAssetCommand
         {
             AuthorId = Guid.NewGuid(),
-            UniqueName = "test-asset",
+            Title = "test-asset",
             Description = "desc",
             MarkdownContent = "# Test",
             AssetTypeId = Guid.NewGuid(),

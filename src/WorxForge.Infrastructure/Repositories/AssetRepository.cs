@@ -23,7 +23,7 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
         assets.Select(asset => new AssetSummaryDto
         {
             AssetId = asset.AssetId,
-            UniqueName = asset.UniqueName,
+            Title = asset.Title,
             Description = asset.Description,
             AssetTypeName = dbContext.AssetTypes
                 .Where(assetType => assetType.AssetTypeId == asset.AssetTypeId)
@@ -116,9 +116,6 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
 
         return await SelectAssetSummaries(popularAssets, userId).ToListAsync(cancellationToken);
     }
-
-    public Task<bool> ExistsByUniqueNameAsync(string uniqueName, CancellationToken cancellationToken) =>
-        dbContext.Assets.AnyAsync(a => a.UniqueName == uniqueName, cancellationToken);
 
     public async Task<Guid> CreateAsync(Asset asset, IEnumerable<Guid> toolIds, IEnumerable<Guid> tagIds, CancellationToken cancellationToken)
     {

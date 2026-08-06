@@ -108,7 +108,7 @@ public static class AssetsEndpointGroup
         var command = new CreateAssetCommand
         {
             AuthorId = authorId,
-            UniqueName = request.UniqueName,
+            Title = request.Title,
             Description = request.Description,
             MarkdownContent = request.MarkdownContent,
             AssetTypeId = request.AssetTypeId,
