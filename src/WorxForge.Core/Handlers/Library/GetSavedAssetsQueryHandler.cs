@@ -1,12 +1,13 @@
 ﻿using WorxForge.Core.Abstractions;
+using WorxForge.Core.Interfaces.Repositories;
+using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Queries.Library;
 
 namespace WorxForge.Core.Handlers.Library;
 
-public sealed class GetSavedAssetsQueryHandler : IQueryHandler<GetSavedAssetsQuery, WorxForge.Domain.Dtos.Library.LibrarySummaryDto>
+public sealed class GetSavedAssetsQueryHandler(IAssetRepository assetRepository)
+    : IQueryHandler<GetSavedAssetsQuery, IReadOnlyList<AssetSummaryDto>>
 {
-    public Task<WorxForge.Domain.Dtos.Library.LibrarySummaryDto> HandleAsync(GetSavedAssetsQuery query, CancellationToken cancellationToken)
-    {
-        throw new NotImplementedException();
-    }
+    public Task<IReadOnlyList<AssetSummaryDto>> HandleAsync(GetSavedAssetsQuery query, CancellationToken cancellationToken) =>
+        assetRepository.GetSavedAssetsAsync(query.UserId, cancellationToken);
 }
