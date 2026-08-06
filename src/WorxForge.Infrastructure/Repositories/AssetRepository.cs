@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using WorxForge.Core.Interfaces.Repositories;
 using WorxForge.Domain.Constants;
 using WorxForge.Domain.Dtos.Assets;
-using WorxForge.Domain.Dtos.Explore;
 using WorxForge.Domain.Entities;
 using WorxForge.Domain.Enums;
 using WorxForge.Domain.Queries.Explore;
@@ -13,9 +12,13 @@ namespace WorxForge.Infrastructure.Repositories;
 
 public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetRepository
 {
+    // Scalar shape of the raw SQL ranking query; only AssetId/Score are needed to determine the
+    // page of matching assets and their order, the full AssetSummaryDto is projected separately.
+    private sealed record AssetSearchHit(Guid AssetId, double Score);
+
     public Task<Asset?> GetByIdAsync(Guid assetId, CancellationToken cancellationToken) => throw new NotImplementedException();
 
-    public async Task<(IReadOnlyList<AssetSearchResultDto> Items, int Total)> SearchAsync(AssetSearchCriteria criteria, CancellationToken cancellationToken)
+    public async Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> SearchAsync(AssetSearchCriteria criteria, CancellationToken cancellationToken)
     {
         var (selectBody, parameters) = BuildSearchSql(criteria);
 
@@ -32,9 +35,22 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
             $"{selectBody} ORDER BY Score DESC, AssetId OFFSET {{{parameters.Count}}} ROWS FETCH NEXT {{{parameters.Count + 1}}} ROWS ONLY",
             pageParameters.ToArray());
 
-        var items = await dbContext.Database.SqlQuery<AssetSearchResultDto>(pageSql).ToListAsync(cancellationToken);
+        var hits = await dbContext.Database.SqlQuery<AssetSearchHit>(pageSql).ToListAsync(cancellationToken);
+        if (hits.Count == 0)
+        {
+            return ([], total);
+        }
 
-        return (items, total);
+        var hitIds = hits.Select(hit => hit.AssetId).ToList();
+        var matchedAssets = dbContext.Assets.AsNoTracking().Where(asset => hitIds.Contains(asset.AssetId));
+        var summaries = await SelectAssetSummaries(matchedAssets, criteria.RequestingUserId).ToListAsync(cancellationToken);
+
+        // The score ordering computed in SQL is authoritative; re-establish it since the WHERE-IN
+        // projection above does not preserve the order of hitIds.
+        var rank = hitIds.Select((assetId, index) => (assetId, index)).ToDictionary(x => x.assetId, x => x.index);
+        var orderedSummaries = summaries.OrderBy(summary => rank[summary.AssetId]).ToList();
+
+        return (orderedSummaries, total);
     }
 
     // Builds a plain SQL LIKE search with a SQL-computed relevance score (exact title +100, title contains +50,
@@ -71,8 +87,6 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
         sql.Append($"""
             SELECT
                 a.asset_id AS AssetId,
-                a.title AS Title,
-                a.description AS Description,
                 {scoreExpr} AS Score
             FROM ASSET a
             WHERE 1 = 1

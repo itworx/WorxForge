@@ -19,6 +19,7 @@ public sealed class SearchAssetsQuery
 // Repository-facing search criteria: parsing of Q into FTS terms/hashtags already happened in the handler.
 public sealed class AssetSearchCriteria
 {
+    public Guid RequestingUserId { get; init; }
     public IReadOnlyList<string> Terms { get; init; } = [];
     public IReadOnlyList<string> Tags { get; init; } = [];
     public Guid? AssetTypeId { get; init; }

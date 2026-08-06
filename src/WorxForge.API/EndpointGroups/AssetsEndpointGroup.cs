@@ -3,8 +3,8 @@ using WorxForge.Core.Abstractions;
 using WorxForge.Domain.Commands.Assets;
 using WorxForge.Domain.Commands.Comments;
 using WorxForge.Domain.Commands.Library;
+using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Dtos.Common;
-using WorxForge.Domain.Dtos.Explore;
 using WorxForge.Domain.Queries.Assets;
 using WorxForge.Domain.Queries.Explore;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +24,7 @@ public static class AssetsEndpointGroup
             .WithName("SearchAssets")
             .WithSummary("Search knowledge assets")
             .WithDescription("Keyword search over Title/Description plus exact hashtag matching (#tag), combined with the same filters as Explore.")
-            .Produces<PagedResultDto<AssetSearchResultDto>>(StatusCodes.Status200OK)
+            .Produces<PagedResultDto<AssetSummaryDto>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized);
         group.MapGet("/{assetId:guid}", GetAssetDetailsAsync);
         group.MapGet("/{assetId:guid}/comments", GetAssetCommentsAsync);
@@ -46,7 +46,7 @@ public static class AssetsEndpointGroup
     private static async Task<IResult> SearchAssetsAsync(
         [AsParameters] AssetFilters filters,
         ClaimsPrincipal user,
-        IQueryHandler<SearchAssetsQuery, PagedResultDto<AssetSearchResultDto>> handler,
+        IQueryHandler<SearchAssetsQuery, PagedResultDto<AssetSummaryDto>> handler,
         CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))

@@ -1,5 +1,4 @@
 ﻿using WorxForge.Domain.Dtos.Assets;
-using WorxForge.Domain.Dtos.Explore;
 using WorxForge.Domain.Entities;
 using WorxForge.Domain.Queries.Explore;
 
@@ -8,7 +7,7 @@ namespace WorxForge.Core.Interfaces.Repositories;
 public interface IAssetRepository
 {
     Task<Asset?> GetByIdAsync(Guid assetId, CancellationToken cancellationToken);
-    Task<(IReadOnlyList<AssetSearchResultDto> Items, int Total)> SearchAsync(AssetSearchCriteria criteria, CancellationToken cancellationToken);
+    Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> SearchAsync(AssetSearchCriteria criteria, CancellationToken cancellationToken);
     Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> BrowseAsync(BrowseAssetsQuery query, CancellationToken cancellationToken);
     Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> GetByOwnerAsync(Guid userId, int page, int pageSize, string? sortBy, CancellationToken cancellationToken);
     Task<IReadOnlyList<AssetSummaryDto>> GetFeaturedAsync(int limit, CancellationToken cancellationToken);
