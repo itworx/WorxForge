@@ -71,7 +71,6 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
         entity.ToTable("ASSET_TYPE");
         entity.HasKey(e => e.AssetTypeId);
         entity.HasIndex(e => e.Name).IsUnique();
-        entity.HasData(SeedData.AssetTypes);
         ApplySnakeCaseColumnNames(entity);
     }
 
@@ -80,7 +79,6 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
         entity.ToTable("DOMAIN");
         entity.HasKey(e => e.DomainId);
         entity.HasIndex(e => e.Name).IsUnique();
-        entity.HasData(SeedData.Domains);
         ApplySnakeCaseColumnNames(entity);
     }
 
@@ -89,7 +87,6 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
         entity.ToTable("USE_CASE");
         entity.HasKey(e => e.UseCaseId);
         entity.HasIndex(e => e.Name).IsUnique();
-        entity.HasData(SeedData.UseCases);
         ApplySnakeCaseColumnNames(entity);
     }
 
@@ -121,7 +118,6 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
         entity.ToTable("TOOL");
         entity.HasKey(e => e.ToolId);
         entity.HasIndex(e => e.Name).IsUnique();
-        entity.HasData(SeedData.Tools);
         ApplySnakeCaseColumnNames(entity);
     }
 

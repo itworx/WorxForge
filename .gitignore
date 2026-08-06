@@ -35,3 +35,6 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Local documentation
+*.md
