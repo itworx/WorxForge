@@ -94,6 +94,9 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
     {
         entity.ToTable("ASSET");
         entity.HasKey(e => e.AssetId);
+        entity.Property(e => e.UniqueName).IsRequired().HasMaxLength(200);
+        entity.Property(e => e.Description).IsRequired().HasMaxLength(1000);
+        entity.HasIndex(e => e.UniqueName).IsUnique();
         entity.HasOne<User>()
             .WithMany()
             .HasForeignKey(e => e.AuthorId)

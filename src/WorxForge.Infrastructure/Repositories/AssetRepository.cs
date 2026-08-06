@@ -23,7 +23,7 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
         assets.Select(asset => new AssetSummaryDto
         {
             AssetId = asset.AssetId,
-            Title = asset.Title,
+            UniqueName = asset.UniqueName,
             Description = asset.Description,
             AssetTypeName = dbContext.AssetTypes
                 .Where(assetType => assetType.AssetTypeId == asset.AssetTypeId)
@@ -115,6 +115,18 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
             .Take(limit);
 
         return await SelectAssetSummaries(popularAssets, userId).ToListAsync(cancellationToken);
+    }
+
+    public Task<bool> ExistsByUniqueNameAsync(string uniqueName, CancellationToken cancellationToken) =>
+        dbContext.Assets.AnyAsync(a => a.UniqueName == uniqueName, cancellationToken);
+
+    public async Task<Guid> CreateAsync(Asset asset, IEnumerable<Guid> toolIds, IEnumerable<Guid> tagIds, CancellationToken cancellationToken)
+    {
+        dbContext.Assets.Add(asset);
+        dbContext.AssetTools.AddRange(toolIds.Select(id => new AssetTool { AssetId = asset.AssetId, ToolId = id }));
+        dbContext.AssetTags.AddRange(tagIds.Select(id => new AssetTag { AssetId = asset.AssetId, TagId = id }));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return asset.AssetId;
     }
 
     public Task AddAsync(Asset asset, CancellationToken cancellationToken) => throw new NotImplementedException();

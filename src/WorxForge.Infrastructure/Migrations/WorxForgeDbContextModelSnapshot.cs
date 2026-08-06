@@ -42,7 +42,9 @@ namespace WorxForge.Infrastructure.Migrations
                         .HasColumnName("created_at");
 
                     b.Property<string>("Description")
-                        .HasColumnType("nvarchar(max)")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
                         .HasColumnName("description");
 
                     b.Property<Guid>("DomainId")
@@ -54,10 +56,11 @@ namespace WorxForge.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("markdown_content");
 
-                    b.Property<string>("Title")
+                    b.Property<string>("UniqueName")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("title");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasColumnName("unique_name");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("datetime2")
@@ -74,6 +77,9 @@ namespace WorxForge.Infrastructure.Migrations
                     b.HasIndex("AuthorId");
 
                     b.HasIndex("DomainId");
+
+                    b.HasIndex("UniqueName")
+                        .IsUnique();
 
                     b.HasIndex("UseCaseId");
 
