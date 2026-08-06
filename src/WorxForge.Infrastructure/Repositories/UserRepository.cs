@@ -9,24 +9,42 @@ public sealed class UserRepository(WorxForgeDbContext dbContext) : IUserReposito
 {
     private readonly WorxForgeDbContext _dbContext = dbContext;
 
+    private IQueryable<User> UsersForRead() =>
+        _dbContext.Users
+            .FromSqlRaw(
+                @"SELECT
+                    [user_id],
+                    [username],
+                    [display_name],
+                    [email],
+                    [email_verified],
+                    [role],
+                    CAST([google_id] AS nvarchar(450)) AS [google_id],
+                    [avatar_url],
+                    [created_at],
+                    [updated_at],
+                    [deleted_at]
+                FROM [USER]")
+            .AsNoTracking();
+
     public Task<User?> GetByIdAsync(Guid userId, CancellationToken cancellationToken)
     {
-        return _dbContext.Users
+        return UsersForRead()
             .FirstOrDefaultAsync(user => user.UserId == userId && user.DeletedAt == null, cancellationToken);
     }
     public Task<User?> GetByGoogleIdAsync(string googleId, CancellationToken cancellationToken)
     {
-        return _dbContext.Users
+        return UsersForRead()
             .FirstOrDefaultAsync(user => user.GoogleId == googleId && user.DeletedAt == null, cancellationToken);
     }
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken)
     {
-        return _dbContext.Users
+        return UsersForRead()
             .FirstOrDefaultAsync(user => user.Email == email && user.DeletedAt == null, cancellationToken);
     }
     public Task<User?> GetByUsernameAsync(string username, CancellationToken cancellationToken)
     {
-        return _dbContext.Users
+        return UsersForRead()
             .FirstOrDefaultAsync(user => user.Username == username && user.DeletedAt == null, cancellationToken);
     }
     public Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken)

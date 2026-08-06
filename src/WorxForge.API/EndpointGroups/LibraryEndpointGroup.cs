@@ -1,4 +1,7 @@
-﻿using WorxForge.Domain.Queries.Assets;
+﻿using System.Security.Claims;
+using WorxForge.Core.Abstractions;
+using WorxForge.Domain.Dtos.Assets;
+using WorxForge.Domain.Queries.Assets;
 using WorxForge.Domain.Queries.Library;
 
 namespace WorxForge.API.EndpointGroups;
@@ -16,7 +19,19 @@ public static class LibraryEndpointGroup
         return group;
     }
 
-    private static Task<IResult> GetSavedAssetsAsync([AsParameters] GetSavedAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
+    private static async Task<IResult> GetSavedAssetsAsync(
+        ClaimsPrincipal user,
+        IQueryHandler<GetSavedAssetsQuery, IReadOnlyList<AssetSummaryDto>> handler,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var savedAssets = await handler.HandleAsync(new GetSavedAssetsQuery { UserId = userId }, cancellationToken);
+        return Results.Ok(savedAssets);
+    }
     private static Task<IResult> GetRecentlyUsedAssetsAsync([AsParameters] GetRecentlyUsedAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> GetFollowingAssetsAsync([AsParameters] GetFollowingAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> GetMyAssetsAsync([AsParameters] GetMyAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
