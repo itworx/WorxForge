@@ -7,6 +7,7 @@ namespace WorxForge.Core.Interfaces.Repositories;
 public interface IAssetRepository
 {
     Task<Asset?> GetByIdAsync(Guid assetId, CancellationToken cancellationToken);
+    Task<Asset?> GetByIdTrackedAsync(Guid assetId, CancellationToken cancellationToken);
     Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> SearchAsync(AssetSearchCriteria criteria, CancellationToken cancellationToken);
     Task<AssetDetailsDto?> GetDetailsAsync(Guid assetId, Guid requestingUserId, CancellationToken cancellationToken);
     Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> BrowseAsync(BrowseAssetsQuery query, CancellationToken cancellationToken);

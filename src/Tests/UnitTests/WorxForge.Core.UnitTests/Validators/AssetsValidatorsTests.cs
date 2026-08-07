@@ -125,6 +125,94 @@ public sealed class AssetsValidatorsTests
         await act.Should().ThrowAsync<ValidationException>();
     }
 
+    // -- UpdateAssetCommandValidator -------------------------------------------
+
+    private static UpdateAssetCommand ValidUpdateCommand(
+        Guid? assetId = null,
+        Guid? requestingUserId = null,
+        string title = "my-asset",
+        string description = "A valid description.",
+        string markdownContent = "# Hello",
+        IReadOnlyList<Guid>? toolIds = null,
+        IReadOnlyList<string>? tags = null) => new()
+    {
+        AssetId = assetId ?? Guid.NewGuid(),
+        RequestingUserId = requestingUserId ?? Guid.NewGuid(),
+        Title = title,
+        Description = description,
+        MarkdownContent = markdownContent,
+        AssetTypeId = Guid.NewGuid(),
+        DomainId = Guid.NewGuid(),
+        UseCaseId = Guid.NewGuid(),
+        ToolIds = toolIds ?? [Guid.NewGuid()],
+        Tags = tags ?? ["react", "typescript"]
+    };
+
+    [Fact]
+    public async Task UpdateAssetValidator_ShouldPass_WhenCommandIsValid()
+    {
+        var validator = new UpdateAssetCommandValidator();
+        var act = () => validator.ValidateAsync(ValidUpdateCommand(), CancellationToken.None);
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task UpdateAssetValidator_ShouldThrow_WhenAssetIdIsEmpty()
+    {
+        var validator = new UpdateAssetCommandValidator();
+        var act = () => validator.ValidateAsync(ValidUpdateCommand(assetId: Guid.Empty), CancellationToken.None);
+        await act.Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task UpdateAssetValidator_ShouldThrow_WhenRequestingUserIdIsEmpty()
+    {
+        var validator = new UpdateAssetCommandValidator();
+        var act = () => validator.ValidateAsync(ValidUpdateCommand(requestingUserId: Guid.Empty), CancellationToken.None);
+        await act.Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task UpdateAssetValidator_ShouldReuseCreateRules_WhenToolIdsContainDuplicates()
+    {
+        var validator = new UpdateAssetCommandValidator();
+        var toolId = Guid.NewGuid();
+        var act = () => validator.ValidateAsync(ValidUpdateCommand(toolIds: [toolId, toolId]), CancellationToken.None);
+        await act.Should().ThrowAsync<ValidationException>();
+    }
+
+    // -- DeleteAssetCommandValidator -------------------------------------------
+
+    [Fact]
+    public async Task DeleteAssetValidator_ShouldPass_WhenCommandIsValid()
+    {
+        var validator = new DeleteAssetCommandValidator();
+        var command = new DeleteAssetCommand { AssetId = Guid.NewGuid(), RequestingUserId = Guid.NewGuid() };
+
+        var act = () => validator.ValidateAsync(command, CancellationToken.None);
+        await act.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task DeleteAssetValidator_ShouldThrow_WhenAssetIdIsEmpty()
+    {
+        var validator = new DeleteAssetCommandValidator();
+        var command = new DeleteAssetCommand { AssetId = Guid.Empty, RequestingUserId = Guid.NewGuid() };
+
+        var act = () => validator.ValidateAsync(command, CancellationToken.None);
+        await act.Should().ThrowAsync<ValidationException>();
+    }
+
+    [Fact]
+    public async Task DeleteAssetValidator_ShouldThrow_WhenRequestingUserIdIsEmpty()
+    {
+        var validator = new DeleteAssetCommandValidator();
+        var command = new DeleteAssetCommand { AssetId = Guid.NewGuid(), RequestingUserId = Guid.Empty };
+
+        var act = () => validator.ValidateAsync(command, CancellationToken.None);
+        await act.Should().ThrowAsync<ValidationException>();
+    }
+
     // -- UploadMarkdownFileCommandValidator ------------------------------------
 
     [Theory]

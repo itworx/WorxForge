@@ -2,5 +2,6 @@
 
 public sealed class CreateAssetCommentRequest
 {
+	public string Content { get; init; } = string.Empty;
 }
 

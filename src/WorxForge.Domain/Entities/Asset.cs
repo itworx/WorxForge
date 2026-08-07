@@ -12,4 +12,7 @@ public sealed class Asset
     public Guid UseCaseId { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+    public DateTime? DeletedAt { get; set; }
+    public ICollection<AssetTool> AssetTools { get; set; } = [];
+    public ICollection<AssetTag> AssetTags { get; set; } = [];
 }
