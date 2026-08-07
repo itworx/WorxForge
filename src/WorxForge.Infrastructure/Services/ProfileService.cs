@@ -9,7 +9,7 @@ public sealed class ProfileService(IUserRepository userRepository) : IProfileSer
 {
     private readonly IUserRepository _userRepository = userRepository;
 
-    public async Task<MyProfileDto> GetMyProfileAsync(Guid userId, CancellationToken cancellationToken)
+    public async Task<ProfileDto> GetMyProfileAsync(Guid userId, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
 
@@ -18,18 +18,57 @@ public sealed class ProfileService(IUserRepository userRepository) : IProfileSer
             throw new WorxForgeException("User was not found.");
         }
 
-        return new MyProfileDto
+        return new ProfileDto
         {
             UserId = user.UserId,
             Username = user.Username,
             DisplayName = user.DisplayName,
-            Email = user.Email,
-            EmailVerified = user.EmailVerified,
             AvatarUrl = user.AvatarUrl,
             CreatedAt = user.CreatedAt
         };
     }
-    public Task<PublicProfileDto> GetPublicProfileAsync(Guid targetUserId, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task<ProfileStatisticsDto> GetStatisticsAsync(Guid userId, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task UpdateProfileAsync(Guid userId, string displayName, string username, string? avatarUrl, CancellationToken cancellationToken) => throw new NotImplementedException();
+
+    public async Task<ProfileDto> GetPublicProfileAsync(Guid targetUserId, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
+        if (user is null)
+        {
+            throw new WorxForgeException("User was not found.");
+        }
+
+        return new ProfileDto
+        {
+            UserId = user.UserId,
+            Username = user.Username,
+            DisplayName = user.DisplayName,
+            AvatarUrl = user.AvatarUrl,
+            CreatedAt = user.CreatedAt
+        };
+    }
+
+    public async Task UpdateProfileAsync(Guid userId, string displayName, string username, string? avatarUrl, CancellationToken cancellationToken)
+    {
+        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        if (user is null)
+        {
+            throw new WorxForgeException("User was not found.");
+        }
+
+        var normalizedDisplayName = displayName.Trim();
+        var normalizedUsername = username.Trim();
+        var normalizedAvatarUrl = string.IsNullOrWhiteSpace(avatarUrl) ? null : avatarUrl.Trim();
+
+        var existingByUsername = await _userRepository.GetByUsernameAsync(normalizedUsername, cancellationToken);
+        if (existingByUsername is not null && existingByUsername.UserId != userId)
+        {
+            throw new WorxForgeException("Username is already in use.");
+        }
+
+        user.DisplayName = normalizedDisplayName;
+        user.Username = normalizedUsername;
+        user.AvatarUrl = normalizedAvatarUrl;
+        user.UpdatedAt = DateTime.UtcNow;
+
+        await _userRepository.UpdateAsync(user, cancellationToken);
+    }
 }
