@@ -1,4 +1,5 @@
 ﻿using WorxForge.Core.Abstractions;
+using WorxForge.Domain.Constants;
 using WorxForge.Domain.Commands.Assets;
 using WorxForge.Domain.Exceptions;
 
@@ -6,11 +7,6 @@ namespace WorxForge.Core.Validators.Assets;
 
 public sealed class CreateAssetCommandValidator : IRequestValidator<CreateAssetCommand>
 {
-    private const int TitleMaxLength = 200;
-    private const int DescriptionMaxLength = 1000;
-    private const int TagMaxLength = 50;
-    private const int TagsMaxCount = 20;
-
     public Task ValidateAsync(CreateAssetCommand request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -21,14 +17,14 @@ public sealed class CreateAssetCommandValidator : IRequestValidator<CreateAssetC
         if (string.IsNullOrWhiteSpace(request.Title))
             throw new ValidationException("Title is required.");
 
-        if (request.Title.Length > TitleMaxLength)
-            throw new ValidationException($"Title must not exceed {TitleMaxLength} characters.");
+        if (request.Title.Length > AssetValidationConstants.TitleMaxLength)
+            throw new ValidationException($"Title must not exceed {AssetValidationConstants.TitleMaxLength} characters.");
 
         if (string.IsNullOrWhiteSpace(request.Description))
             throw new ValidationException("Description is required.");
 
-        if (request.Description.Length > DescriptionMaxLength)
-            throw new ValidationException($"Description must not exceed {DescriptionMaxLength} characters.");
+        if (request.Description.Length > AssetValidationConstants.DescriptionMaxLength)
+            throw new ValidationException($"Description must not exceed {AssetValidationConstants.DescriptionMaxLength} characters.");
 
         if (string.IsNullOrWhiteSpace(request.MarkdownContent))
             throw new ValidationException("Markdown content is required.");
@@ -48,13 +44,13 @@ public sealed class CreateAssetCommandValidator : IRequestValidator<CreateAssetC
         if (request.ToolIds.Count != request.ToolIds.Distinct().Count())
             throw new ValidationException("Duplicate tool IDs are not allowed.");
 
-        if (request.Tags.Count > TagsMaxCount)
-            throw new ValidationException($"A maximum of {TagsMaxCount} tags is allowed.");
+        if (request.Tags.Count > AssetValidationConstants.TagsMaxCount)
+            throw new ValidationException($"A maximum of {AssetValidationConstants.TagsMaxCount} tags is allowed.");
 
         foreach (var tag in request.Tags)
         {
-            if (tag.Trim().Length > TagMaxLength)
-                throw new ValidationException($"Each tag must not exceed {TagMaxLength} characters.");
+            if (tag.Trim().Length > AssetValidationConstants.TagMaxLength)
+                throw new ValidationException($"Each tag must not exceed {AssetValidationConstants.TagMaxLength} characters.");
         }
 
         return Task.CompletedTask;

@@ -167,6 +167,15 @@ public sealed class CommentServiceTests
         var assetId = Guid.NewGuid();
         var commentId = Guid.NewGuid();
         var ownerId = Guid.NewGuid();
+        var thread = new AssetCommentDto
+        {
+            CommentId = commentId,
+            AssetId = assetId,
+            Content = "comment",
+            AuthorDisplayName = "Owner",
+            CreatedAt = DateTime.UtcNow,
+            Replies = []
+        };
 
         var commentRepo = new Mock<ICommentRepository>();
         commentRepo.Setup(r => r.GetByIdAsync(commentId, It.IsAny<CancellationToken>()))
@@ -179,6 +188,7 @@ public sealed class CommentServiceTests
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = null
             });
+        commentRepo.Setup(r => r.GetThreadAsync(assetId, commentId, It.IsAny<CancellationToken>())).ReturnsAsync(thread);
         commentRepo.Setup(r => r.SoftDeleteAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         var assetRepo = new Mock<IAssetRepository>();
@@ -199,6 +209,15 @@ public sealed class CommentServiceTests
         var commentId = Guid.NewGuid();
         var commenterId = Guid.NewGuid();
         var assetOwnerId = Guid.NewGuid();
+        var thread = new AssetCommentDto
+        {
+            CommentId = commentId,
+            AssetId = assetId,
+            Content = "comment",
+            AuthorDisplayName = "Commenter",
+            CreatedAt = DateTime.UtcNow,
+            Replies = []
+        };
 
         var commentRepo = new Mock<ICommentRepository>();
         commentRepo.Setup(r => r.GetByIdAsync(commentId, It.IsAny<CancellationToken>()))
@@ -211,6 +230,7 @@ public sealed class CommentServiceTests
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = null
             });
+        commentRepo.Setup(r => r.GetThreadAsync(assetId, commentId, It.IsAny<CancellationToken>())).ReturnsAsync(thread);
         commentRepo.Setup(r => r.SoftDeleteAsync(It.IsAny<IReadOnlyCollection<Guid>>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
         var assetRepo = new Mock<IAssetRepository>();
@@ -348,6 +368,16 @@ public sealed class CommentServiceTests
         };
 
         var commentRepo = new Mock<ICommentRepository>();
+        commentRepo.Setup(r => r.GetByIdAsync(commentId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Comment
+            {
+                CommentId = commentId,
+                AssetId = assetId,
+                UserId = Guid.NewGuid(),
+                Content = "root",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = null
+            });
         commentRepo.Setup(r => r.GetThreadAsync(assetId, commentId, It.IsAny<CancellationToken>())).ReturnsAsync(thread);
 
         var assetRepo = new Mock<IAssetRepository>();
