@@ -24,6 +24,10 @@ public sealed class ExceptionMiddleware(RequestDelegate next)
         {
             await WriteErrorAsync(context, HttpStatusCode.UnprocessableEntity, ex.Message);
         }
+        catch (ForbiddenException ex)
+        {
+            await WriteErrorAsync(context, HttpStatusCode.Forbidden, ex.Message);
+        }
         catch (WorxForgeException ex)
         {
             await WriteErrorAsync(context, HttpStatusCode.BadRequest, ex.Message);

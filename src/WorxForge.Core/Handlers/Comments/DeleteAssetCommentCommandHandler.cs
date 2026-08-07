@@ -1,12 +1,16 @@
 ﻿using WorxForge.Core.Abstractions;
+using WorxForge.Core.Interfaces.Services;
 using WorxForge.Domain.Commands.Comments;
 
 namespace WorxForge.Core.Handlers.Comments;
 
-public sealed class DeleteAssetCommentCommandHandler : ICommandHandler<DeleteAssetCommentCommand>
+public sealed class DeleteAssetCommentCommandHandler(
+    IRequestValidator<DeleteAssetCommentCommand> validator,
+    ICommentService commentService) : ICommandHandler<DeleteAssetCommentCommand>
 {
-    public Task HandleAsync(DeleteAssetCommentCommand command, CancellationToken cancellationToken)
+    public async Task HandleAsync(DeleteAssetCommentCommand command, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        await validator.ValidateAsync(command, cancellationToken);
+        await commentService.DeleteCommentAsync(command.AssetId, command.CommentId, command.RequestingUserId, cancellationToken);
     }
 }

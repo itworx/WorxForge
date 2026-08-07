@@ -40,7 +40,7 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
         }
 
         var hitIds = hits.Select(hit => hit.AssetId).ToList();
-        var matchedAssets = dbContext.Assets.AsNoTracking().Where(asset => hitIds.Contains(asset.AssetId));
+        var matchedAssets = dbContext.Assets.AsNoTracking().Where(asset => asset.DeletedAt == null && hitIds.Contains(asset.AssetId));
         var summaries = await SelectAssetSummaries(matchedAssets, criteria.RequestingUserId).ToListAsync(cancellationToken);
 
         // The score ordering computed in SQL is authoritative; re-establish it since the WHERE-IN
@@ -88,6 +88,7 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
                 {scoreExpr} AS Score
             FROM ASSET a
             WHERE 1 = 1
+            AND a.deleted_at IS NULL
             """);
         sql.Append(termConditions);
 
@@ -152,7 +153,7 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
 
     public async Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> BrowseAsync(BrowseAssetsQuery query, CancellationToken cancellationToken)
     {
-        var assets = dbContext.Assets.AsNoTracking();
+        var assets = dbContext.Assets.AsNoTracking().Where(asset => asset.DeletedAt == null);
 
         if (query.DomainId.HasValue)
         {
@@ -191,13 +192,19 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
     public Task<Asset?> GetByIdAsync(Guid assetId, CancellationToken cancellationToken) =>
         dbContext.Assets
             .AsNoTracking()
-            .SingleOrDefaultAsync(asset => asset.AssetId == assetId, cancellationToken);
+            .SingleOrDefaultAsync(asset => asset.AssetId == assetId && asset.DeletedAt == null, cancellationToken);
+
+    public Task<Asset?> GetByIdTrackedAsync(Guid assetId, CancellationToken cancellationToken) =>
+        dbContext.Assets
+            .Include(asset => asset.AssetTools)
+            .Include(asset => asset.AssetTags)
+            .SingleOrDefaultAsync(asset => asset.AssetId == assetId && asset.DeletedAt == null, cancellationToken);
 
     public async Task<AssetDetailsDto?> GetDetailsAsync(Guid assetId, Guid requestingUserId, CancellationToken cancellationToken)
     {
         var asset = await dbContext.Assets
             .AsNoTracking()
-            .SingleOrDefaultAsync(existing => existing.AssetId == assetId, cancellationToken);
+            .SingleOrDefaultAsync(existing => existing.AssetId == assetId && existing.DeletedAt == null, cancellationToken);
 
         if (asset is null)
         {
@@ -284,7 +291,7 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
     {
         var ownedAssets = dbContext.Assets
             .AsNoTracking()
-            .Where(asset => asset.AuthorId == userId);
+            .Where(asset => asset.AuthorId == userId && asset.DeletedAt == null);
 
         var total = await ownedAssets.CountAsync(cancellationToken);
         if (total == 0)
@@ -389,6 +396,7 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
 
         var recentlyLikedAssets = dbContext.Assets
             .AsNoTracking()
+            .Where(asset => asset.DeletedAt == null)
             .Where(asset => asset.CreatedAt >= since)
             .OrderByDescending(asset => dbContext.Reactions.Count(reaction =>
                 reaction.AssetId == asset.AssetId && reaction.ReactionType == ReactionTypeConstants.Like))
@@ -401,6 +409,7 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
     {
         var recentlyUpdatedAssets = dbContext.Assets
             .AsNoTracking()
+            .Where(asset => asset.DeletedAt == null)
             .OrderByDescending(asset => asset.UpdatedAt)
             .Take(limit);
 
@@ -412,7 +421,7 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
         var savedAssets = dbContext.Bookmarks
             .AsNoTracking()
             .Where(bookmark => bookmark.UserId == userId)
-            .Join(dbContext.Assets.AsNoTracking(), bookmark => bookmark.AssetId, asset => asset.AssetId, (bookmark, asset) => asset);
+            .Join(dbContext.Assets.AsNoTracking().Where(asset => asset.DeletedAt == null), bookmark => bookmark.AssetId, asset => asset.AssetId, (bookmark, asset) => asset);
 
         return await SelectAssetSummaries(savedAssets, userId).ToListAsync(cancellationToken);
     }
@@ -421,16 +430,17 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
     {
         var likedAssetAffinities = dbContext.Reactions
             .Where(reaction => reaction.UserId == userId && reaction.ReactionType == ReactionTypeConstants.Like)
-            .Join(dbContext.Assets, reaction => reaction.AssetId, likedAsset => likedAsset.AssetId,
+            .Join(dbContext.Assets.Where(asset => asset.DeletedAt == null), reaction => reaction.AssetId, likedAsset => likedAsset.AssetId,
                 (reaction, likedAsset) => new { likedAsset.DomainId, likedAsset.AssetTypeId });
 
         var bookmarkedAssetAffinities = dbContext.Bookmarks
             .Where(bookmark => bookmark.UserId == userId)
-            .Join(dbContext.Assets, bookmark => bookmark.AssetId, bookmarkedAsset => bookmarkedAsset.AssetId,
+            .Join(dbContext.Assets.Where(asset => asset.DeletedAt == null), bookmark => bookmark.AssetId, bookmarkedAsset => bookmarkedAsset.AssetId,
                 (bookmark, bookmarkedAsset) => new { bookmarkedAsset.DomainId, bookmarkedAsset.AssetTypeId });
 
         var recommendedAssets = dbContext.Assets
             .AsNoTracking()
+            .Where(asset => asset.DeletedAt == null)
             .Where(asset => asset.AuthorId != userId)
             .Where(asset => !dbContext.Reactions.Any(reaction =>
                 reaction.AssetId == asset.AssetId && reaction.UserId == userId && reaction.ReactionType == ReactionTypeConstants.Like))
@@ -452,6 +462,7 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
     {
         var popularAssets = dbContext.Assets
             .AsNoTracking()
+            .Where(asset => asset.DeletedAt == null)
             .OrderByDescending(asset =>
                 dbContext.Reactions.Count(reaction => reaction.AssetId == asset.AssetId && reaction.ReactionType == ReactionTypeConstants.Like)
                 + dbContext.Comments.Count(comment => comment.AssetId == asset.AssetId && comment.DeletedAt == null)
@@ -471,7 +482,28 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
         return asset.AssetId;
     }
 
-    public Task AddAsync(Asset asset, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task UpdateAsync(Asset asset, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task DeleteAsync(Guid assetId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public async Task AddAsync(Asset asset, CancellationToken cancellationToken)
+    {
+        dbContext.Assets.Add(asset);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(Asset asset, CancellationToken cancellationToken)
+    {
+        _ = asset;
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task DeleteAsync(Guid assetId, CancellationToken cancellationToken)
+    {
+        var asset = await dbContext.Assets.SingleOrDefaultAsync(existing => existing.AssetId == assetId, cancellationToken);
+        if (asset is null)
+        {
+            return;
+        }
+
+        asset.DeletedAt = DateTime.UtcNow;
+        asset.UpdatedAt = DateTime.UtcNow;
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }

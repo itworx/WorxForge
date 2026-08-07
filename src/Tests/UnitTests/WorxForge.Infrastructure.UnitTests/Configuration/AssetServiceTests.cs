@@ -163,4 +163,153 @@ public sealed class AssetServiceTests
 
         capturedNames.Should().ContainSingle().Which.Should().Be("react");
     }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldThrowNotFound_WhenAssetDoesNotExist()
+    {
+        var assetRepo = new Mock<IAssetRepository>();
+        assetRepo.Setup(r => r.GetByIdTrackedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Asset?)null);
+
+        var service = BuildService(assetRepo: assetRepo);
+        var command = new UpdateAssetCommand
+        {
+            AssetId = Guid.NewGuid(),
+            RequestingUserId = Guid.NewGuid(),
+            Title = "title",
+            Description = "description",
+            MarkdownContent = "# md",
+            AssetTypeId = Guid.NewGuid(),
+            DomainId = Guid.NewGuid(),
+            UseCaseId = Guid.NewGuid(),
+            ToolIds = [Guid.NewGuid()]
+        };
+
+        var act = () => service.UpdateAsync(command, CancellationToken.None);
+        await act.Should().ThrowAsync<NotFoundException>();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldThrowForbidden_WhenUserDoesNotOwnAsset()
+    {
+        var ownerId = Guid.NewGuid();
+        var requesterId = Guid.NewGuid();
+        var assetRepo = new Mock<IAssetRepository>();
+        assetRepo.Setup(r => r.GetByIdTrackedAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Asset { AssetId = Guid.NewGuid(), AuthorId = ownerId });
+
+        var service = BuildService(assetRepo: assetRepo);
+        var command = new UpdateAssetCommand
+        {
+            AssetId = Guid.NewGuid(),
+            RequestingUserId = requesterId,
+            Title = "title",
+            Description = "description",
+            MarkdownContent = "# md",
+            AssetTypeId = Guid.NewGuid(),
+            DomainId = Guid.NewGuid(),
+            UseCaseId = Guid.NewGuid(),
+            ToolIds = [Guid.NewGuid()]
+        };
+
+        var act = () => service.UpdateAsync(command, CancellationToken.None);
+        await act.Should().ThrowAsync<ForbiddenException>();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldReplaceRelations_AndPersist()
+    {
+        var ownerId = Guid.NewGuid();
+        var asset = new Asset
+        {
+            AssetId = Guid.NewGuid(),
+            AuthorId = ownerId,
+            Title = "old",
+            Description = "old",
+            MarkdownContent = "old",
+            AssetTypeId = Guid.NewGuid(),
+            DomainId = Guid.NewGuid(),
+            UseCaseId = Guid.NewGuid(),
+            CreatedAt = DateTime.UtcNow.AddDays(-2),
+            UpdatedAt = DateTime.UtcNow.AddDays(-1)
+        };
+
+        var assetRepo = new Mock<IAssetRepository>();
+        assetRepo.Setup(r => r.GetByIdTrackedAsync(asset.AssetId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(asset);
+        assetRepo.Setup(r => r.UpdateAsync(asset, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var tagRepo = new Mock<ITagRepository>();
+        tagRepo.Setup(r => r.GetOrCreateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string name, CancellationToken _) => new Tag { TagId = Guid.NewGuid(), Name = name });
+
+        var toolId = Guid.NewGuid();
+        var service = BuildService(assetRepo: assetRepo, tagRepo: tagRepo);
+
+        await service.UpdateAsync(new UpdateAssetCommand
+        {
+            AssetId = asset.AssetId,
+            RequestingUserId = ownerId,
+            Title = "new title",
+            Description = "new description",
+            MarkdownContent = "# new markdown",
+            AssetTypeId = Guid.NewGuid(),
+            DomainId = Guid.NewGuid(),
+            UseCaseId = Guid.NewGuid(),
+            ToolIds = [toolId, toolId],
+            Tags = ["React", " REACT ", "  ", "Api"]
+        }, CancellationToken.None);
+
+        asset.Title.Should().Be("new title");
+        asset.Description.Should().Be("new description");
+        asset.MarkdownContent.Should().Be("# new markdown");
+        asset.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
+        asset.AssetTools.Select(assetTool => assetTool.ToolId).Should().ContainSingle().Which.Should().Be(toolId);
+        asset.AssetTags.Should().HaveCount(2);
+
+        assetRepo.Verify(r => r.UpdateAsync(asset, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ShouldSetDeletedAt_WhenOwnedByUser()
+    {
+        var ownerId = Guid.NewGuid();
+        var asset = new Asset
+        {
+            AssetId = Guid.NewGuid(),
+            AuthorId = ownerId,
+            Title = "title",
+            MarkdownContent = "md",
+            CreatedAt = DateTime.UtcNow.AddDays(-1),
+            UpdatedAt = DateTime.UtcNow.AddDays(-1)
+        };
+
+        var assetRepo = new Mock<IAssetRepository>();
+        assetRepo.Setup(r => r.GetByIdTrackedAsync(asset.AssetId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(asset);
+        assetRepo.Setup(r => r.UpdateAsync(asset, It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+
+        var service = BuildService(assetRepo: assetRepo);
+        await service.DeleteAsync(asset.AssetId, ownerId, CancellationToken.None);
+
+        asset.DeletedAt.Should().NotBeNull();
+        asset.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(2));
+        assetRepo.Verify(r => r.UpdateAsync(asset, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ShouldThrowForbidden_WhenUserDoesNotOwnAsset()
+    {
+        var ownerId = Guid.NewGuid();
+        var requesterId = Guid.NewGuid();
+        var asset = new Asset { AssetId = Guid.NewGuid(), AuthorId = ownerId, Title = "title", MarkdownContent = "md" };
+
+        var assetRepo = new Mock<IAssetRepository>();
+        assetRepo.Setup(r => r.GetByIdTrackedAsync(asset.AssetId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(asset);
+
+        var service = BuildService(assetRepo: assetRepo);
+        var act = () => service.DeleteAsync(asset.AssetId, requesterId, CancellationToken.None);
+        await act.Should().ThrowAsync<ForbiddenException>();
+    }
 }
