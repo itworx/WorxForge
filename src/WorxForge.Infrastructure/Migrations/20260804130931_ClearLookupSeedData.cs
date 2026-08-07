@@ -13,65 +13,9 @@ namespace WorxForge.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DeleteData(
-                table: "ASSET_TYPE",
-                keyColumn: "asset_type_id",
-                keyValue: new Guid("11111111-1111-1111-1111-111111111101"));
-
-            migrationBuilder.DeleteData(
-                table: "ASSET_TYPE",
-                keyColumn: "asset_type_id",
-                keyValue: new Guid("11111111-1111-1111-1111-111111111102"));
-
-            migrationBuilder.DeleteData(
-                table: "ASSET_TYPE",
-                keyColumn: "asset_type_id",
-                keyValue: new Guid("11111111-1111-1111-1111-111111111103"));
-
-            migrationBuilder.DeleteData(
-                table: "DOMAIN",
-                keyColumn: "domain_id",
-                keyValue: new Guid("21111111-1111-1111-1111-111111111101"));
-
-            migrationBuilder.DeleteData(
-                table: "DOMAIN",
-                keyColumn: "domain_id",
-                keyValue: new Guid("21111111-1111-1111-1111-111111111102"));
-
-            migrationBuilder.DeleteData(
-                table: "DOMAIN",
-                keyColumn: "domain_id",
-                keyValue: new Guid("21111111-1111-1111-1111-111111111103"));
-
-            migrationBuilder.DeleteData(
-                table: "TOOL",
-                keyColumn: "tool_id",
-                keyValue: new Guid("41111111-1111-1111-1111-111111111101"));
-
-            migrationBuilder.DeleteData(
-                table: "TOOL",
-                keyColumn: "tool_id",
-                keyValue: new Guid("41111111-1111-1111-1111-111111111102"));
-
-            migrationBuilder.DeleteData(
-                table: "TOOL",
-                keyColumn: "tool_id",
-                keyValue: new Guid("41111111-1111-1111-1111-111111111103"));
-
-            migrationBuilder.DeleteData(
-                table: "USE_CASE",
-                keyColumn: "use_case_id",
-                keyValue: new Guid("31111111-1111-1111-1111-111111111101"));
-
-            migrationBuilder.DeleteData(
-                table: "USE_CASE",
-                keyColumn: "use_case_id",
-                keyValue: new Guid("31111111-1111-1111-1111-111111111102"));
-
-            migrationBuilder.DeleteData(
-                table: "USE_CASE",
-                keyColumn: "use_case_id",
-                keyValue: new Guid("31111111-1111-1111-1111-111111111103"));
+            // Intentionally left blank.
+            // Removing seeded lookup rows can break existing foreign key references
+            // in environments where assets already reference these IDs.
         }
 
         /// <inheritdoc />

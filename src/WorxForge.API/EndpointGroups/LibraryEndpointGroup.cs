@@ -24,6 +24,8 @@ public static class LibraryEndpointGroup
     private static async Task<IResult> GetSavedAssetsAsync(
         ClaimsPrincipal user,
         IQueryHandler<GetSavedAssetsQuery, IReadOnlyList<AssetSummaryDto>> handler,
+        [FromQuery(Name = "Page")] int? page,
+        [FromQuery(Name = "PageSize")] int? pageSize,
         CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
@@ -31,7 +33,15 @@ public static class LibraryEndpointGroup
             return Results.Unauthorized();
         }
 
-        var savedAssets = await handler.HandleAsync(new GetSavedAssetsQuery { UserId = userId }, cancellationToken);
+        var defaultQuery = new GetSavedAssetsQuery { UserId = userId };
+        var query = new GetSavedAssetsQuery
+        {
+            UserId = userId,
+            Page = page ?? defaultQuery.Page,
+            PageSize = pageSize ?? defaultQuery.PageSize
+        };
+
+        var savedAssets = await handler.HandleAsync(query, cancellationToken);
         return Results.Ok(savedAssets);
     }
     private static Task<IResult> GetRecentlyUsedAssetsAsync([AsParameters] GetRecentlyUsedAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
