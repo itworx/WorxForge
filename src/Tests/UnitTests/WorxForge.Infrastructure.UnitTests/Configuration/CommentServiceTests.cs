@@ -1,9 +1,11 @@
 using FluentAssertions;
 using Moq;
 using WorxForge.Core.Interfaces.Repositories;
+using WorxForge.Core.Interfaces.Services;
 using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Dtos.Common;
 using WorxForge.Domain.Entities;
+using WorxForge.Domain.Enums;
 using WorxForge.Domain.Exceptions;
 using WorxForge.Infrastructure.Services;
 
@@ -13,7 +15,9 @@ public sealed class CommentServiceTests
 {
     private static CommentService BuildService(
         Mock<ICommentRepository>? commentRepo = null,
-        Mock<IAssetRepository>? assetRepo = null)
+        Mock<IAssetRepository>? assetRepo = null,
+        Mock<IUserRepository>? userRepo = null,
+        Mock<INotificationService>? notificationService = null)
     {
         if (assetRepo is null)
         {
@@ -35,7 +39,23 @@ public sealed class CommentServiceTests
                 .ReturnsAsync(([], 0));
         }
 
-        return new CommentService(commentRepo.Object, assetRepo.Object);
+        if (userRepo is null)
+        {
+            userRepo = new Mock<IUserRepository>();
+            userRepo.Setup(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((User?)null);
+        }
+
+        if (notificationService is null)
+        {
+            notificationService = new Mock<INotificationService>();
+            notificationService.Setup(s => s.SendAsync(
+                    It.IsAny<Guid>(), It.IsAny<Guid?>(), It.IsAny<NotificationType>(), It.IsAny<string>(),
+                    It.IsAny<Guid?>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+        }
+
+        return new CommentService(commentRepo.Object, assetRepo.Object, userRepo.Object, notificationService.Object);
     }
 
     [Fact]
