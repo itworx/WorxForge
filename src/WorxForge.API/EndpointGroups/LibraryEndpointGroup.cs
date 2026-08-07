@@ -1,6 +1,8 @@
 ﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using WorxForge.Core.Abstractions;
 using WorxForge.Domain.Dtos.Assets;
+using WorxForge.Domain.Dtos.Common;
 using WorxForge.Domain.Queries.Assets;
 using WorxForge.Domain.Queries.Library;
 
@@ -34,6 +36,28 @@ public static class LibraryEndpointGroup
     }
     private static Task<IResult> GetRecentlyUsedAssetsAsync([AsParameters] GetRecentlyUsedAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> GetFollowingAssetsAsync([AsParameters] GetFollowingAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static Task<IResult> GetMyAssetsAsync([AsParameters] GetMyAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
+    private static async Task<IResult> GetMyAssetsAsync(
+        ClaimsPrincipal user,
+        IQueryHandler<GetMyAssetsQuery, PagedResultDto<MyAssetDto>> handler,
+        [FromQuery(Name = "Page")] int? page,
+        [FromQuery(Name = "PageSize")] int? pageSize,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var defaultQuery = new GetMyAssetsQuery { UserId = userId };
+        var query = new GetMyAssetsQuery
+        {
+            UserId = userId,
+            Page = page ?? defaultQuery.Page,
+            PageSize = pageSize ?? defaultQuery.PageSize
+        };
+
+        var myAssets = await handler.HandleAsync(query, cancellationToken);
+        return Results.Ok(myAssets);
+    }
     private static Task<IResult> GetMyAssetDetailsAsync([AsParameters] GetMyAssetDetailsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
 }
