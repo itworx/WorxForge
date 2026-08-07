@@ -39,8 +39,10 @@ public static class AssetsEndpointGroup
         group.MapPost("/", CreateAssetAsync)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
 
-        group.MapPut("/{assetId:guid}", UpdateAssetAsync);
-        group.MapDelete("/{assetId:guid}", DeleteAssetAsync);
+        group.MapPut("/{assetId:guid}", UpdateAssetAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapDelete("/{assetId:guid}", DeleteAssetAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         group.MapPost("/preview", PreviewAssetAsync);
         group.MapGet("/search", SearchAssetsAsync)
             .WithName("SearchAssets")
@@ -137,8 +139,54 @@ public static class AssetsEndpointGroup
         return Results.Created($"/api/assets/{response.AssetId}", response);
     }
 
-    private static Task<IResult> UpdateAssetAsync(UpdateAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static Task<IResult> DeleteAssetAsync([FromBody] DeleteAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
+    private static async Task<IResult> UpdateAssetAsync(
+        Guid assetId,
+        [FromBody] UpdateAssetRequest request,
+        HttpContext httpContext,
+        ICommandHandler<UpdateAssetCommand> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;
+        if (!Guid.TryParse(userIdClaim, out var requestingUserId))
+            throw new WorxForgeException("Authenticated user identifier is invalid.");
+
+        var command = new UpdateAssetCommand
+        {
+            AssetId = assetId,
+            RequestingUserId = requestingUserId,
+            Title = request.Title,
+            Description = request.Description,
+            MarkdownContent = request.MarkdownContent,
+            AssetTypeId = request.AssetTypeId,
+            DomainId = request.DomainId,
+            UseCaseId = request.UseCaseId,
+            ToolIds = request.ToolIds,
+            Tags = request.Tags
+        };
+
+        await handler.HandleAsync(command, cancellationToken);
+        return Results.Ok();
+    }
+
+    private static async Task<IResult> DeleteAssetAsync(
+        Guid assetId,
+        HttpContext httpContext,
+        ICommandHandler<DeleteAssetCommand> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;
+        if (!Guid.TryParse(userIdClaim, out var requestingUserId))
+            throw new WorxForgeException("Authenticated user identifier is invalid.");
+
+        var command = new DeleteAssetCommand
+        {
+            AssetId = assetId,
+            RequestingUserId = requestingUserId
+        };
+
+        await handler.HandleAsync(command, cancellationToken);
+        return Results.NoContent();
+    }
     private static Task<IResult> PreviewAssetAsync(PreviewAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
 
     private static async Task<IResult> SearchAssetsAsync(

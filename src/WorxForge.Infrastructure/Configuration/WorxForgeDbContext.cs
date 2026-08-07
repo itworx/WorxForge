@@ -130,7 +130,7 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
         entity.ToTable("ASSET_TOOL");
         entity.HasKey(e => new { e.AssetId, e.ToolId });
         entity.HasOne<Asset>()
-            .WithMany()
+            .WithMany(asset => asset.AssetTools)
             .HasForeignKey(e => e.AssetId)
             .OnDelete(DeleteBehavior.NoAction);
         entity.HasOne<Tool>()
@@ -153,7 +153,7 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
         entity.ToTable("ASSET_TAG");
         entity.HasKey(e => new { e.AssetId, e.TagId });
         entity.HasOne<Asset>()
-            .WithMany()
+            .WithMany(asset => asset.AssetTags)
             .HasForeignKey(e => e.AssetId)
             .OnDelete(DeleteBehavior.NoAction);
         entity.HasOne<Tag>()

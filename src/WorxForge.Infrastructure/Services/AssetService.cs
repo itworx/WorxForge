@@ -36,42 +36,66 @@ public sealed class AssetService(
     public Task<PagedResultDto<MyAssetDto>> GetMyAssetsAsync(Guid userId, int page, int pageSize, string? sortBy, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<PagedResultDto<AssetSummaryDto>> SearchAsync(SearchAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<PagedResultDto<AssetSummaryDto>> BrowseAsync(BrowseAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task UpdateAsync(UpdateAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task DeleteAsync(Guid assetId, Guid requestingUserId, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public async Task UpdateAsync(UpdateAssetCommand command, CancellationToken cancellationToken)
+    {
+        var asset = await assetRepository.GetByIdTrackedAsync(command.AssetId, cancellationToken)
+            ?? throw new NotFoundException($"Asset '{command.AssetId}' was not found.");
+
+        EnsureOwnership(asset.AuthorId, command.RequestingUserId);
+
+        await EnsureLookupsExistAsync(command.AssetTypeId, command.DomainId, command.UseCaseId, cancellationToken);
+
+        var toolIds = command.ToolIds.Distinct().ToList();
+        await EnsureToolsExistAsync(toolIds, cancellationToken);
+
+        var tagIds = await ResolveTagIdsAsync(command.Tags, cancellationToken);
+
+        asset.Title = command.Title;
+        asset.Description = command.Description;
+        asset.MarkdownContent = command.MarkdownContent;
+        asset.AssetTypeId = command.AssetTypeId;
+        asset.DomainId = command.DomainId;
+        asset.UseCaseId = command.UseCaseId;
+        asset.UpdatedAt = DateTime.UtcNow;
+
+        asset.AssetTools.Clear();
+        foreach (var toolId in toolIds)
+        {
+            asset.AssetTools.Add(new AssetTool { AssetId = asset.AssetId, ToolId = toolId });
+        }
+
+        asset.AssetTags.Clear();
+        foreach (var tagId in tagIds)
+        {
+            asset.AssetTags.Add(new AssetTag { AssetId = asset.AssetId, TagId = tagId });
+        }
+
+        await assetRepository.UpdateAsync(asset, cancellationToken);
+    }
+
+    public async Task DeleteAsync(Guid assetId, Guid requestingUserId, CancellationToken cancellationToken)
+    {
+        var asset = await assetRepository.GetByIdTrackedAsync(assetId, cancellationToken)
+            ?? throw new NotFoundException($"Asset '{assetId}' was not found.");
+
+        EnsureOwnership(asset.AuthorId, requestingUserId);
+
+        asset.DeletedAt = DateTime.UtcNow;
+        asset.UpdatedAt = DateTime.UtcNow;
+
+        await assetRepository.UpdateAsync(asset, cancellationToken);
+    }
     public Task<string> PreviewMarkdownAsync(string markdownContent, CancellationToken cancellationToken) => throw new NotImplementedException();
 
     public async Task<Guid> CreateAsync(CreateAssetCommand command, CancellationToken cancellationToken)
     {
-        if (await assetTypeRepository.GetByIdAsync(command.AssetTypeId, cancellationToken) is null)
-            throw new NotFoundException($"Asset type '{command.AssetTypeId}' was not found.");
-
-        if (await businessDomainRepository.GetByIdAsync(command.DomainId, cancellationToken) is null)
-            throw new NotFoundException($"Domain '{command.DomainId}' was not found.");
-
-        if (await useCaseRepository.GetByIdAsync(command.UseCaseId, cancellationToken) is null)
-            throw new NotFoundException($"Use case '{command.UseCaseId}' was not found.");
+        await EnsureLookupsExistAsync(command.AssetTypeId, command.DomainId, command.UseCaseId, cancellationToken);
 
         // Deduplicate tool IDs defensively before FK validation and before saving.
         var toolIds = command.ToolIds.Distinct().ToList();
+        await EnsureToolsExistAsync(toolIds, cancellationToken);
 
-        foreach (var toolId in toolIds)
-        {
-            if (await toolRepository.GetByIdAsync(toolId, cancellationToken) is null)
-                throw new NotFoundException($"Tool '{toolId}' was not found.");
-        }
-
-        var normalizedTags = command.Tags
-            .Select(t => t.Trim().ToLowerInvariant())
-            .Where(t => t.Length > 0)
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-
-        var tagIds = new List<Guid>(normalizedTags.Count);
-        foreach (var tagName in normalizedTags)
-        {
-            var tag = await tagRepository.GetOrCreateAsync(tagName, cancellationToken);
-            tagIds.Add(tag.TagId);
-        }
+        var tagIds = await ResolveTagIdsAsync(command.Tags, cancellationToken);
 
         var asset = new Asset
         {
@@ -88,5 +112,50 @@ public sealed class AssetService(
         };
 
         return await assetRepository.CreateAsync(asset, toolIds, tagIds, cancellationToken);
+    }
+
+    private async Task EnsureLookupsExistAsync(Guid assetTypeId, Guid domainId, Guid useCaseId, CancellationToken cancellationToken)
+    {
+        if (await assetTypeRepository.GetByIdAsync(assetTypeId, cancellationToken) is null)
+            throw new NotFoundException($"Asset type '{assetTypeId}' was not found.");
+
+        if (await businessDomainRepository.GetByIdAsync(domainId, cancellationToken) is null)
+            throw new NotFoundException($"Domain '{domainId}' was not found.");
+
+        if (await useCaseRepository.GetByIdAsync(useCaseId, cancellationToken) is null)
+            throw new NotFoundException($"Use case '{useCaseId}' was not found.");
+    }
+
+    private async Task EnsureToolsExistAsync(IEnumerable<Guid> toolIds, CancellationToken cancellationToken)
+    {
+        foreach (var toolId in toolIds)
+        {
+            if (await toolRepository.GetByIdAsync(toolId, cancellationToken) is null)
+                throw new NotFoundException($"Tool '{toolId}' was not found.");
+        }
+    }
+
+    private static void EnsureOwnership(Guid authorId, Guid requestingUserId)
+    {
+        if (authorId != requestingUserId)
+            throw new ForbiddenException("You are not allowed to modify this asset.");
+    }
+
+    private async Task<List<Guid>> ResolveTagIdsAsync(IReadOnlyList<string> tags, CancellationToken cancellationToken)
+    {
+        var normalizedTags = tags
+            .Select(tag => tag.Trim().ToLowerInvariant())
+            .Where(tag => tag.Length > 0)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        var tagIds = new List<Guid>(normalizedTags.Count);
+        foreach (var tagName in normalizedTags)
+        {
+            var tag = await tagRepository.GetOrCreateAsync(tagName, cancellationToken);
+            tagIds.Add(tag.TagId);
+        }
+
+        return tagIds;
     }
 }
