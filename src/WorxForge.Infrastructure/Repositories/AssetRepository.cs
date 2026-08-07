@@ -462,6 +462,15 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
         return await SelectAssetSummaries(popularAssets, userId).ToListAsync(cancellationToken);
     }
 
+    public async Task<Guid> CreateAsync(Asset asset, IEnumerable<Guid> toolIds, IEnumerable<Guid> tagIds, CancellationToken cancellationToken)
+    {
+        dbContext.Assets.Add(asset);
+        dbContext.AssetTools.AddRange(toolIds.Select(id => new AssetTool { AssetId = asset.AssetId, ToolId = id }));
+        dbContext.AssetTags.AddRange(tagIds.Select(id => new AssetTag { AssetId = asset.AssetId, TagId = id }));
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return asset.AssetId;
+    }
+
     public Task AddAsync(Asset asset, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task UpdateAsync(Asset asset, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task DeleteAsync(Guid assetId, CancellationToken cancellationToken) => throw new NotImplementedException();

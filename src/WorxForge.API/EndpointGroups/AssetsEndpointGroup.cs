@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using WorxForge.Core.Abstractions;
 using WorxForge.Domain.Dtos.Common;
 using WorxForge.Domain.Queries.Explore;
@@ -9,11 +10,12 @@ using WorxForge.Domain.Commands.Comments;
 using WorxForge.Domain.Commands.Library;
 using WorxForge.Domain.Constants;
 using WorxForge.Domain.Dtos.Assets;
+using WorxForge.Domain.Dtos.Explore;
 using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Queries.Assets;
+using WorxForge.Domain.Queries.Lookup;
+using WorxForge.API.Models.Requests.Assets;
 using WorxForge.API.Models.Requests.Comments;
-using WorxForge.Core.Abstractions;
-using Microsoft.AspNetCore.Mvc;
 
 namespace WorxForge.API.EndpointGroups;
 
@@ -24,7 +26,19 @@ public static class AssetsEndpointGroup
     public static RouteGroupBuilder MapAssetsEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/assets");
-        group.MapPost("/", CreateAssetAsync);
+
+        group.MapGet("/types", GetAssetTypesAsync);
+        group.MapGet("/domains", GetDomainsAsync);
+        group.MapGet("/use-cases", GetUseCasesAsync);
+        group.MapGet("/tools", GetToolsAsync);
+
+        group.MapPost("/upload-markdown", UploadMarkdownAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser)
+            .DisableAntiforgery();
+
+        group.MapPost("/", CreateAssetAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
+
         group.MapPut("/{assetId:guid}", UpdateAssetAsync);
         group.MapDelete("/{assetId:guid}", DeleteAssetAsync);
         group.MapPost("/preview", PreviewAssetAsync);
@@ -35,18 +49,94 @@ public static class AssetsEndpointGroup
             .Produces<PagedResultDto<AssetSummaryDto>>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
+        group.MapGet("/{assetId:guid}", GetAssetDetailsAsync);
         group.MapGet("/{assetId:guid}/comments", GetAssetCommentsAsync);
         group.MapPost("/{assetId:guid}/comments", CreateAssetCommentAsync);
         group.MapDelete("/{assetId:guid}/comments/{commentId:guid}", DeleteAssetCommentAsync);
         group.MapPost("/{assetId:guid}/bookmark", BookmarkAssetAsync);
         group.MapDelete("/{assetId:guid}/bookmark", RemoveBookmarkAsync);
-        group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync);
-        group.MapGet("/{assetId:guid}", GetAssetDetailsAsync)
+        group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapDelete("/{assetId:guid}/reaction", RemoveAssetReactionAsync)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         return group;
     }
 
-    private static Task<IResult> CreateAssetAsync(CreateAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
+    private static async Task<IResult> GetAssetTypesAsync(
+        IQueryHandler<GetAssetTypesQuery, IReadOnlyList<LookupItemDto>> handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new GetAssetTypesQuery(), cancellationToken);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetDomainsAsync(
+        IQueryHandler<GetDomainsQuery, IReadOnlyList<LookupItemDto>> handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new GetDomainsQuery(), cancellationToken);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetUseCasesAsync(
+        IQueryHandler<GetUseCasesQuery, IReadOnlyList<LookupItemDto>> handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new GetUseCasesQuery(), cancellationToken);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetToolsAsync(
+        IQueryHandler<GetToolsQuery, IReadOnlyList<LookupItemDto>> handler,
+        CancellationToken cancellationToken)
+    {
+        var result = await handler.HandleAsync(new GetToolsQuery(), cancellationToken);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> UploadMarkdownAsync(
+        IFormFile file,
+        ICommandHandler<UploadMarkdownFileCommand, UploadMarkdownResponse> handler,
+        CancellationToken cancellationToken)
+    {
+        using var memoryStream = new MemoryStream();
+        await file.CopyToAsync(memoryStream, cancellationToken);
+        var bytes = memoryStream.ToArray();
+
+        var result = await handler.HandleAsync(
+            new UploadMarkdownFileCommand { FileContent = bytes, FileName = file.FileName },
+            cancellationToken);
+
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> CreateAssetAsync(
+        [FromBody] CreateAssetRequest request,
+        HttpContext httpContext,
+        ICommandHandler<CreateAssetCommand, PublishAssetResponse> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;
+        if (!Guid.TryParse(userIdClaim, out var authorId))
+            throw new WorxForgeException("Authenticated user identifier is invalid.");
+
+        var command = new CreateAssetCommand
+        {
+            AuthorId = authorId,
+            Title = request.Title,
+            Description = request.Description,
+            MarkdownContent = request.MarkdownContent,
+            AssetTypeId = request.AssetTypeId,
+            DomainId = request.DomainId,
+            UseCaseId = request.UseCaseId,
+            ToolIds = request.ToolIds,
+            Tags = request.Tags
+        };
+
+        var response = await handler.HandleAsync(command, cancellationToken);
+        return Results.Created($"/api/assets/{response.AssetId}", response);
+    }
+
     private static Task<IResult> UpdateAssetAsync(UpdateAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> DeleteAssetAsync([FromBody] DeleteAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> PreviewAssetAsync(PreviewAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
@@ -57,7 +147,7 @@ public static class AssetsEndpointGroup
         IQueryHandler<SearchAssetsQuery, PagedResultDto<AssetSummaryDto>> handler,
         CancellationToken cancellationToken)
     {
-        if (!Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))    
+        if (!Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
         {
             return Results.Unauthorized();
         }

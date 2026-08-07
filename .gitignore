@@ -36,5 +36,8 @@ Thumbs.db
 *.swp
 *.swo
 
-# Local documentation
-*.md
+## ──────────────────────────────────────────────
+##  Documentation
+## ──────────────────────────────────────────────
+GoogleSignIn_CodeReview.md
+GoogleSignIn_Implementation_Status.md
