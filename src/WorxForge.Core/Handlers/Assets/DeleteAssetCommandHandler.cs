@@ -1,12 +1,16 @@
 ﻿using WorxForge.Core.Abstractions;
+using WorxForge.Core.Interfaces.Services;
 using WorxForge.Domain.Commands.Assets;
 
 namespace WorxForge.Core.Handlers.Assets;
 
-public sealed class DeleteAssetCommandHandler : ICommandHandler<DeleteAssetCommand>
+public sealed class DeleteAssetCommandHandler(
+    IRequestValidator<DeleteAssetCommand> validator,
+    IAssetService assetService) : ICommandHandler<DeleteAssetCommand>
 {
-    public Task HandleAsync(DeleteAssetCommand command, CancellationToken cancellationToken)
+    public async Task HandleAsync(DeleteAssetCommand command, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        await validator.ValidateAsync(command, cancellationToken);
+        await assetService.DeleteAsync(command.AssetId, command.RequestingUserId, cancellationToken);
     }
 }

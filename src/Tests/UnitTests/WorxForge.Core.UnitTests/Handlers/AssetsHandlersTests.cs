@@ -108,5 +108,49 @@ public sealed class AssetsHandlersTests
 
         callOrder.Should().ContainInOrder("validator", "service");
     }
+
+    // -- UpdateAssetCommandHandler ---------------------------------------------
+
+    [Fact]
+    public async Task UpdateAssetHandler_ShouldCallValidator_BeforeService()
+    {
+        var callOrder = new List<string>();
+        var validator = new Mock<IRequestValidator<UpdateAssetCommand>>();
+        validator.Setup(v => v.ValidateAsync(It.IsAny<UpdateAssetCommand>(), It.IsAny<CancellationToken>()))
+            .Callback(() => callOrder.Add("validator"))
+            .Returns(Task.CompletedTask);
+
+        var service = new Mock<IAssetService>();
+        service.Setup(s => s.UpdateAsync(It.IsAny<UpdateAssetCommand>(), It.IsAny<CancellationToken>()))
+            .Callback(() => callOrder.Add("service"))
+            .Returns(Task.CompletedTask);
+
+        var handler = new UpdateAssetCommandHandler(validator.Object, service.Object);
+        await handler.HandleAsync(new UpdateAssetCommand(), CancellationToken.None);
+
+        callOrder.Should().ContainInOrder("validator", "service");
+    }
+
+    // -- DeleteAssetCommandHandler ---------------------------------------------
+
+    [Fact]
+    public async Task DeleteAssetHandler_ShouldCallValidator_BeforeService()
+    {
+        var callOrder = new List<string>();
+        var validator = new Mock<IRequestValidator<DeleteAssetCommand>>();
+        validator.Setup(v => v.ValidateAsync(It.IsAny<DeleteAssetCommand>(), It.IsAny<CancellationToken>()))
+            .Callback(() => callOrder.Add("validator"))
+            .Returns(Task.CompletedTask);
+
+        var service = new Mock<IAssetService>();
+        service.Setup(s => s.DeleteAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .Callback(() => callOrder.Add("service"))
+            .Returns(Task.CompletedTask);
+
+        var handler = new DeleteAssetCommandHandler(validator.Object, service.Object);
+        await handler.HandleAsync(new DeleteAssetCommand { AssetId = Guid.NewGuid(), RequestingUserId = Guid.NewGuid() }, CancellationToken.None);
+
+        callOrder.Should().ContainInOrder("validator", "service");
+    }
 }
 
