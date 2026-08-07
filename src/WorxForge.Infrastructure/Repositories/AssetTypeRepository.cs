@@ -8,8 +8,8 @@ namespace WorxForge.Infrastructure.Repositories;
 public sealed class AssetTypeRepository(WorxForgeDbContext dbContext) : IAssetTypeRepository
 {
     public async Task<IReadOnlyList<AssetType>> GetAllAsync(CancellationToken cancellationToken) =>
-        await dbContext.AssetTypes.OrderBy(x => x.Name).ToListAsync(cancellationToken);
+        await dbContext.AssetTypes.AsNoTracking().ToListAsync(cancellationToken);
 
-    public Task<AssetType?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
-        dbContext.AssetTypes.FirstOrDefaultAsync(x => x.AssetTypeId == id, cancellationToken);
+    public async Task<AssetType?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
+        await dbContext.AssetTypes.AsNoTracking().FirstOrDefaultAsync(assetType => assetType.AssetTypeId == id, cancellationToken);
 }

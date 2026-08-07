@@ -84,7 +84,7 @@ public static class AuthenticationEndpointGroup
 
     private static async Task<IResult> GetMyProfileAsync(
         HttpContext httpContext,
-        IQueryHandler<GetMyProfileQuery, MyProfileDto> handler,
+        IQueryHandler<GetMyProfileQuery, ProfileDto> handler,
         CancellationToken cancellationToken)
     {
         var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;

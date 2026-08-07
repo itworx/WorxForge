@@ -8,8 +8,8 @@ namespace WorxForge.Infrastructure.Repositories;
 public sealed class UseCaseRepository(WorxForgeDbContext dbContext) : IUseCaseRepository
 {
     public async Task<IReadOnlyList<UseCase>> GetAllAsync(CancellationToken cancellationToken) =>
-        await dbContext.UseCases.OrderBy(x => x.Name).ToListAsync(cancellationToken);
+        await dbContext.UseCases.AsNoTracking().ToListAsync(cancellationToken);
 
-    public Task<UseCase?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
-        dbContext.UseCases.FirstOrDefaultAsync(x => x.UseCaseId == id, cancellationToken);
+    public async Task<UseCase?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
+        await dbContext.UseCases.AsNoTracking().FirstOrDefaultAsync(useCase => useCase.UseCaseId == id, cancellationToken);
 }
