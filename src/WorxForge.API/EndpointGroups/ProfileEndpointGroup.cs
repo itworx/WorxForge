@@ -14,7 +14,6 @@ public static class ProfileEndpointGroup
         var group = app.MapGroup("/api/profile");
         group.MapGet("/me", GetMyProfileAsync);
         group.MapGet("/{userId:guid}", GetPublicProfileAsync);
-        group.MapGet("/me/statistics", GetMyProfileStatisticsAsync);
         group.MapPut("/me", UpdateMyProfileAsync);
         return group;
     }
@@ -41,22 +40,6 @@ public static class ProfileEndpointGroup
         CancellationToken cancellationToken)
     {
         var response = await handler.HandleAsync(new GetPublicProfileQuery { TargetUserId = userId }, cancellationToken);
-        return Results.Ok(response);
-    }
-
-    private static async Task<IResult> GetMyProfileStatisticsAsync(
-        HttpContext httpContext,
-        IQueryHandler<GetMyProfileStatisticsQuery, ProfileStatisticsDto> handler,
-        CancellationToken cancellationToken)
-    {
-        var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;
-
-        if (!Guid.TryParse(userIdClaim, out var userId))
-        {
-            throw new WorxForgeException("Authenticated user identifier is invalid.");
-        }
-
-        var response = await handler.HandleAsync(new GetMyProfileStatisticsQuery { UserId = userId }, cancellationToken);
         return Results.Ok(response);
     }
 

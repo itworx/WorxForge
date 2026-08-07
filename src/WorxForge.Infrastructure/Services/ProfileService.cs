@@ -83,35 +83,6 @@ public sealed class ProfileService(IUserRepository userRepository, WorxForgeDbCo
         };
     }
 
-    public async Task<ProfileStatisticsDto> GetStatisticsAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
-        if (user is null)
-        {
-            throw new WorxForgeException("User was not found.");
-        }
-
-        var totalPublishedAssets = await _dbContext.Assets
-            .AsNoTracking()
-            .CountAsync(asset => asset.AuthorId == userId, cancellationToken);
-
-        var totalReactionsReceived = await _dbContext.Reactions
-            .AsNoTracking()
-            .Join(
-                _dbContext.Assets,
-                reaction => reaction.AssetId,
-                asset => asset.AssetId,
-                (reaction, asset) => new { reaction, asset })
-            .CountAsync(joined => joined.asset.AuthorId == userId, cancellationToken);
-
-        return new ProfileStatisticsDto
-        {
-            TotalPublishedAssets = totalPublishedAssets,
-            TotalFollowers = 0,
-            TotalReactionsReceived = totalReactionsReceived
-        };
-    }
-
     public async Task UpdateProfileAsync(Guid userId, string displayName, string username, string? avatarUrl, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
