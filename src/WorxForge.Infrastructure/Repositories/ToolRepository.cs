@@ -1,10 +1,15 @@
-﻿using WorxForge.Core.Interfaces.Repositories;
+﻿using Microsoft.EntityFrameworkCore;
+using WorxForge.Core.Interfaces.Repositories;
 using WorxForge.Domain.Entities;
+using WorxForge.Infrastructure.Configuration;
 
 namespace WorxForge.Infrastructure.Repositories;
 
-public sealed class ToolRepository : IToolRepository
+public sealed class ToolRepository(WorxForgeDbContext dbContext) : IToolRepository
 {
-    public Task<IReadOnlyList<Tool>> GetAllAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
-    public Task<Tool?> GetByIdAsync(Guid id, CancellationToken cancellationToken) => throw new NotImplementedException();
+    public async Task<IReadOnlyList<Tool>> GetAllAsync(CancellationToken cancellationToken) =>
+        await dbContext.Tools.AsNoTracking().ToListAsync(cancellationToken);
+
+    public async Task<Tool?> GetByIdAsync(Guid id, CancellationToken cancellationToken) =>
+        await dbContext.Tools.AsNoTracking().FirstOrDefaultAsync(tool => tool.ToolId == id, cancellationToken);
 }
