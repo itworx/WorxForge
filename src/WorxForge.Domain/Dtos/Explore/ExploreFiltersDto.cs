@@ -6,7 +6,6 @@ public sealed class ExploreFiltersDto
     public IReadOnlyList<LookupItemDto> AssetTypes { get; init; } = [];
     public IReadOnlyList<LookupItemDto> UseCases { get; init; } = [];
     public IReadOnlyList<LookupItemDto> Tools { get; init; } = [];
-    public IReadOnlyList<string> Tags { get; init; } = [];
 }
 
 public sealed class LookupItemDto

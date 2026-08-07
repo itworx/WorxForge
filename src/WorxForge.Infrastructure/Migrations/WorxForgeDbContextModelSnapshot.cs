@@ -56,7 +56,8 @@ namespace WorxForge.Infrastructure.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
                         .HasColumnName("title");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -74,6 +75,8 @@ namespace WorxForge.Infrastructure.Migrations
                     b.HasIndex("AuthorId");
 
                     b.HasIndex("DomainId");
+
+                    b.HasIndex("Title");
 
                     b.HasIndex("UseCaseId");
 
