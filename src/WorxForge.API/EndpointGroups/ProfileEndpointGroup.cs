@@ -12,10 +12,10 @@ public static class ProfileEndpointGroup
     public static RouteGroupBuilder MapProfileEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/profile");
-        group.MapGet("/me", GetMyProfileAsync).RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapGet("/me", GetMyProfileAsync);
         group.MapGet("/{userId:guid}", GetPublicProfileAsync);
-        group.MapGet("/me/statistics", GetMyProfileStatisticsAsync).RequireAuthorization(PolicyConstants.AuthenticatedUser);
-        group.MapPut("/me", UpdateMyProfileAsync).RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapGet("/me/statistics", GetMyProfileStatisticsAsync);
+        group.MapPut("/me", UpdateMyProfileAsync);
         return group;
     }
 

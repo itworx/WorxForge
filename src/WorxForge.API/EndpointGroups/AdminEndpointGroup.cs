@@ -1,5 +1,4 @@
 ﻿using WorxForge.Domain.Commands.Admin;
-using WorxForge.Domain.Constants;
 using WorxForge.Domain.Queries.Admin;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,7 +8,7 @@ public static class AdminEndpointGroup
 {
     public static RouteGroupBuilder MapAdminEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/api/admin").RequireAuthorization(PolicyConstants.AdminOnly);
+        var group = app.MapGroup("/api/admin");
         group.MapGet("/users", GetAdminUsersAsync);
         group.MapPost("/users", CreateUserByAdminAsync);
         group.MapDelete("/users/{userId:guid}", DeleteUserByAdminAsync);
