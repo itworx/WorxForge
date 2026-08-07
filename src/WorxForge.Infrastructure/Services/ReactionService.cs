@@ -3,10 +3,15 @@ using WorxForge.Core.Interfaces.Services;
 using WorxForge.Domain.Constants;
 using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Entities;
+using WorxForge.Domain.Enums;
 
 namespace WorxForge.Infrastructure.Services;
 
-public sealed class ReactionService(IAssetRepository assetRepository, IReactionRepository reactionRepository) : IReactionService
+public sealed class ReactionService(
+    IAssetRepository assetRepository,
+    IReactionRepository reactionRepository,
+    IUserRepository userRepository,
+    INotificationService notificationService) : IReactionService
 {
     public async Task<AssetReactionDto> ReactToAssetAsync(Guid userId, Guid assetId, string reactionType, CancellationToken cancellationToken)
     {
@@ -31,6 +36,8 @@ public sealed class ReactionService(IAssetRepository assetRepository, IReactionR
                 UserId = userId,
                 ReactionType = normalizedReactionType
             }, cancellationToken);
+
+            await NotifyAssetOwnerAsync(asset, userId, normalizedReactionType, cancellationToken);
         }
 
         return await reactionRepository.GetSummaryAsync(assetId, userId, cancellationToken);
@@ -46,5 +53,26 @@ public sealed class ReactionService(IAssetRepository assetRepository, IReactionR
 
         await reactionRepository.DeleteAsync(userId, assetId, cancellationToken);
         return await reactionRepository.GetSummaryAsync(assetId, userId, cancellationToken);
+    }
+
+    private async Task NotifyAssetOwnerAsync(Asset asset, Guid actorUserId, string normalizedReactionType, CancellationToken cancellationToken)
+    {
+        if (asset.AuthorId == actorUserId)
+        {
+            return;
+        }
+
+        var actor = await userRepository.GetByIdAsync(actorUserId, cancellationToken);
+        var actorDisplayName = actor?.DisplayName ?? "Someone";
+        var isLike = string.Equals(normalizedReactionType, ReactionTypes.Like, StringComparison.Ordinal);
+
+        await notificationService.SendAsync(
+            recipientUserId: asset.AuthorId,
+            actorUserId: actorUserId,
+            type: isLike ? NotificationType.PostLiked : NotificationType.PostDisliked,
+            message: $"{actorDisplayName} {(isLike ? "liked" : "disliked")} your post \"{asset.Title}\".",
+            assetId: asset.AssetId,
+            commentId: null,
+            cancellationToken: cancellationToken);
     }
 }
