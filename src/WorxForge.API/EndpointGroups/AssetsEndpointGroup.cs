@@ -52,9 +52,18 @@ public static class AssetsEndpointGroup
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status401Unauthorized);
         group.MapGet("/{assetId:guid}", GetAssetDetailsAsync);
-        group.MapGet("/{assetId:guid}/comments", GetAssetCommentsAsync);
-        group.MapPost("/{assetId:guid}/comments", CreateAssetCommentAsync);
-        group.MapDelete("/{assetId:guid}/comments/{commentId:guid}", DeleteAssetCommentAsync);
+        group.MapGet("/{assetId:guid}/comments", GetAssetCommentsAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapGet("/{assetId:guid}/comments/{commentId:guid}", GetAssetCommentThreadAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapPost("/{assetId:guid}/comments", CreateAssetCommentAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapPost("/{assetId:guid}/comments/{commentId:guid}/replies", CreateAssetCommentReplyAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapPut("/{assetId:guid}/comments/{commentId:guid}", UpdateAssetCommentAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapDelete("/{assetId:guid}/comments/{commentId:guid}", DeleteAssetCommentAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         group.MapPost("/{assetId:guid}/bookmark", BookmarkAssetAsync);
         group.MapDelete("/{assetId:guid}/bookmark", RemoveBookmarkAsync);
         group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync)
@@ -257,9 +266,130 @@ public static class AssetsEndpointGroup
         }
     }
 
-    private static Task<IResult> GetAssetCommentsAsync([AsParameters] GetAssetCommentsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static Task<IResult> CreateAssetCommentAsync(CreateAssetCommentCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static Task<IResult> DeleteAssetCommentAsync([FromBody] DeleteAssetCommentCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
+    private static async Task<IResult> GetAssetCommentsAsync(
+        [AsParameters] GetAssetCommentsQuery query,
+        IQueryHandler<GetAssetCommentsQuery, PagedResultDto<AssetCommentDto>> handler,
+        CancellationToken cancellationToken)
+    {
+        var results = await handler.HandleAsync(query, cancellationToken);
+        return Results.Ok(results);
+    }
+
+    private static async Task<IResult> GetAssetCommentThreadAsync(
+        Guid assetId,
+        Guid commentId,
+        IQueryHandler<GetAssetCommentThreadQuery, AssetCommentDto> handler,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetAssetCommentThreadQuery
+        {
+            AssetId = assetId,
+            CommentId = commentId
+        };
+
+        var result = await handler.HandleAsync(query, cancellationToken);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> CreateAssetCommentAsync(
+        Guid assetId,
+        [FromBody] CreateAssetCommentRequest request,
+        ClaimsPrincipal user,
+        ICommandHandler<CreateAssetCommentCommand, Guid> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var command = new CreateAssetCommentCommand
+        {
+            UserId = userId,
+            AssetId = assetId,
+            Content = request.Content
+        };
+
+        var commentId = await handler.HandleAsync(command, cancellationToken);
+        return Results.Created($"/api/assets/{assetId}/comments/{commentId}", commentId);
+    }
+
+    private static async Task<IResult> CreateAssetCommentReplyAsync(
+        Guid assetId,
+        Guid commentId,
+        [FromBody] CreateAssetCommentRequest request,
+        ClaimsPrincipal user,
+        ICommandHandler<CreateAssetCommentCommand, Guid> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var command = new CreateAssetCommentCommand
+        {
+            UserId = userId,
+            AssetId = assetId,
+            ParentCommentId = commentId,
+            Content = request.Content
+        };
+
+        var createdCommentId = await handler.HandleAsync(command, cancellationToken);
+        return Results.Created($"/api/assets/{assetId}/comments/{commentId}", createdCommentId);
+    }
+
+    private static async Task<IResult> UpdateAssetCommentAsync(
+        Guid assetId,
+        Guid commentId,
+        [FromBody] CreateAssetCommentRequest request,
+        ClaimsPrincipal user,
+        ICommandHandler<UpdateAssetCommentCommand> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var command = new UpdateAssetCommentCommand
+        {
+            AssetId = assetId,
+            CommentId = commentId,
+            RequestingUserId = userId,
+            Content = request.Content
+        };
+
+        await handler.HandleAsync(command, cancellationToken);
+        return Results.Ok();
+    }
+
+    private static async Task<IResult> DeleteAssetCommentAsync(
+        Guid assetId,
+        Guid commentId,
+        ClaimsPrincipal user,
+        ICommandHandler<DeleteAssetCommentCommand> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var command = new DeleteAssetCommentCommand
+        {
+            AssetId = assetId,
+            CommentId = commentId,
+            RequestingUserId = userId
+        };
+
+        await handler.HandleAsync(command, cancellationToken);
+        return Results.NoContent();
+    }
     private static Task<IResult> BookmarkAssetAsync(BookmarkAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static Task<IResult> RemoveBookmarkAsync([FromBody] RemoveBookmarkCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static async Task<IResult> ReactToAssetAsync(
