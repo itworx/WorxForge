@@ -1,4 +1,5 @@
 ﻿using WorxForge.Core.Abstractions;
+using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Queries.Profile;
 
 namespace WorxForge.Core.Validators.Profile;
@@ -7,6 +8,18 @@ public sealed class GetPublicProfileQueryValidator : IRequestValidator<GetPublic
 {
     public Task ValidateAsync(GetPublicProfileQuery request, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (request is null)
+        {
+            throw new WorxForgeException("Public profile query is required.");
+        }
+
+        if (request.TargetUserId == Guid.Empty)
+        {
+            throw new WorxForgeException("Target user identifier is required.");
+        }
+
+        return Task.CompletedTask;
     }
 }

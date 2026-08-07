@@ -110,6 +110,10 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
             .WithMany()
             .HasForeignKey(e => e.UseCaseId)
             .OnDelete(DeleteBehavior.NoAction);
+        // Bounded so it can be indexed (SQL Server index keys are capped at 900 bytes); speeds up the
+        // LIKE-based title search's exact-match scoring and title-sorted lookups.
+        entity.Property(e => e.Title).HasMaxLength(300);
+        entity.HasIndex(e => e.Title);
         ApplySnakeCaseColumnNames(entity);
     }
 

@@ -4,9 +4,8 @@ namespace WorxForge.Core.Interfaces.Services;
 
 public interface IProfileService
 {
-    Task<MyProfileDto> GetMyProfileAsync(Guid userId, CancellationToken cancellationToken);
-    Task<PublicProfileDto> GetPublicProfileAsync(Guid targetUserId, CancellationToken cancellationToken);
-    Task<ProfileStatisticsDto> GetStatisticsAsync(Guid userId, CancellationToken cancellationToken);
+    Task<ProfileDto> GetMyProfileAsync(Guid userId, CancellationToken cancellationToken);
+    Task<ProfileDto> GetPublicProfileAsync(Guid targetUserId, CancellationToken cancellationToken);
     Task UpdateProfileAsync(Guid userId, string displayName, string username, string? avatarUrl, CancellationToken cancellationToken);
 }
 
