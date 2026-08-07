@@ -6,7 +6,7 @@ namespace WorxForge.Core.Validators.Assets;
 
 public sealed class CreateAssetCommandValidator : IRequestValidator<CreateAssetCommand>
 {
-    private const int UniqueNameMaxLength = 200;
+    private const int TitleMaxLength = 200;
     private const int DescriptionMaxLength = 1000;
     private const int TagMaxLength = 50;
     private const int TagsMaxCount = 20;
@@ -21,8 +21,8 @@ public sealed class CreateAssetCommandValidator : IRequestValidator<CreateAssetC
         if (string.IsNullOrWhiteSpace(request.Title))
             throw new ValidationException("Title is required.");
 
-        if (request.Title.Length > UniqueNameMaxLength)
-            throw new ValidationException($"Title must not exceed {UniqueNameMaxLength} characters.");
+        if (request.Title.Length > TitleMaxLength)
+            throw new ValidationException($"Title must not exceed {TitleMaxLength} characters.");
 
         if (string.IsNullOrWhiteSpace(request.Description))
             throw new ValidationException("Description is required.");

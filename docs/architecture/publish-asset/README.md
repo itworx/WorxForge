@@ -60,7 +60,7 @@ No new architectural patterns were introduced.
 | Decision | Reason |
 |---|---|
 | No new packages | Project constraint |
-| `UniqueName` replaces `Title` | Assets need a globally unique, permanent identifier |
+| `Title` replaces `Title` | Assets need a globally unique, permanent identifier |
 | CQRS for every endpoint | Enforced by DI convention scanner (`*Handler`, `*Validator`) |
 | Upload handler works inline | No DB writes; no service delegation needed |
 | Single `SaveChangesAsync` for publish | EF Core wraps it in an implicit transaction |

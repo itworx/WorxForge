@@ -39,7 +39,7 @@ public sealed class AssetsValidatorsTests
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task CreateAssetValidator_ShouldThrow_WhenUniqueNameIsEmpty(string name)
+    public async Task CreateAssetValidator_ShouldThrow_WhenTitleIsEmpty(string name)
     {
         var validator = new CreateAssetCommandValidator();
         var act = () => validator.ValidateAsync(ValidCreateCommand(title: name), CancellationToken.None);
@@ -47,7 +47,7 @@ public sealed class AssetsValidatorsTests
     }
 
     [Fact]
-    public async Task CreateAssetValidator_ShouldThrow_WhenUniqueNameExceedsMaxLength()
+    public async Task CreateAssetValidator_ShouldThrow_WhenTitleExceedsMaxLength()
     {
         var validator = new CreateAssetCommandValidator();
         var act = () => validator.ValidateAsync(ValidCreateCommand(title: new string('x', 201)), CancellationToken.None);
