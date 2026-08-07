@@ -122,7 +122,32 @@ Validation:
 - `dotnet build` succeeded
 - `dotnet ef database update` succeeded on a local SQL Server instance when the connection string was corrected to point at `localhost` with a dedicated database name
 
-### 7) Setup script hardening
+### 7) Runtime seeding refactor (2026-08-04)
+
+The original lookup seed data was migration-time only (`HasData`), which baked a small, fixed set of rows (3 per table) into `InitialCreate` and could not be extended without editing migration history. This was replaced with a runtime seeding approach:
+
+- `HasData(...)` calls were removed from `WorxForgeDbContext` for `AssetType`, `BusinessDomain`, `UseCase`, and `Tool`
+- The old static `SeedData.cs` was deleted
+- New seeder classes were added under `WorxForge.Infrastructure/Persistence/Seed/`:
+  - `IDataSeeder` — common contract (`SeedAsync(WorxForgeDbContext, CancellationToken)`)
+  - `AssetTypeSeeder`, `BusinessDomainSeeder`, `UseCaseSeeder`, `ToolSeeder` — each holds its full predefined value list and only inserts rows when its table is empty (`AnyAsync()` guard), so seeding is idempotent and safe to run on every startup
+  - `DataSeeder` — orchestrator exposing `IServiceProvider.SeedWorxForgeDataAsync()`, run in a DI scope
+- `Program.cs` calls `await app.Services.SeedWorxForgeDataAsync();` right after `builder.Build()`, before the request pipeline is configured
+- A new migration, `ClearLookupSeedData`, was added on top of the untouched `InitialCreate` migration. It only `DeleteData`s the 12 original hardcoded rows (by GUID) so existing databases converge to the same empty-table state the runtime seeders expect, without rewriting migration history that other team members already have
+
+Predefined values now seeded (expanded beyond the original 3-per-table set):
+
+- Asset types: Prompt, Skill, Agent, Agent instruction, Workflow, Coding standard, Template, Other
+- Domains: Development, Quality Assurance, Product, Architecture, DevOps, Security, Data, General
+- Use cases: Code generation, Code review, Testing, Requirements, Documentation, Debugging, Architecture design, Security review, Repository onboarding, General Assistance
+- Tools: WorxGPT, Claude Code, GitHub Copilot, OpenAI, Anthropic, Tool agnostic
+
+Validation:
+
+- `dotnet ef migrations add ClearLookupSeedData` and `dotnet ef database update` succeeded against the local SQL Server instance
+- Confirmed via direct SQL query that all four lookup tables contain the full expected value sets after a single app run
+
+### 8) Setup script hardening
 
 The root `setup.ps1` script was updated so a fresh clone gets a stronger first-run experience:
 
@@ -154,8 +179,8 @@ Validation:
 
 - EF Core is wired into Infrastructure
 - DbContext is present and aligned to the DB markdown
-- Initial migration exists
-- Seed data exists for documented lookup tables
+- Initial migration exists, plus a follow-up migration clearing the original hardcoded seed rows
+- Lookup tables (`AssetType`, `BusinessDomain`, `UseCase`, `Tool`) are seeded at application startup via idempotent seeder classes under `WorxForge.Infrastructure/Persistence/Seed/`, not via migration `HasData`
 
 ### Validation status
 
@@ -185,7 +210,7 @@ Validation:
 1. Keep the repository in this foundation-ready state
 2. Start feature work only after the team agrees on the first business slice
 3. If schema changes are required, update the markdown spec first
-4. If database seeding needs to expand, add only documented reference data
+4. If database seeding needs to expand, add the new values to the relevant seeder's list in `WorxForge.Infrastructure/Persistence/Seed/` — only documented reference data
 5. If authentication work begins, implement it on top of the existing `JwtAccessToken` configuration contract
 
 ## Files intentionally removed

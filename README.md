@@ -87,7 +87,11 @@ dotnet user-secrets set --project .\src\WorxForge.API\WorxForge.API.csproj "Conn
 dotnet user-secrets set --project .\src\WorxForge.API\WorxForge.API.csproj "JwtAccessToken:Issuer" "WorxForge.Dev"
 dotnet user-secrets set --project .\src\WorxForge.API\WorxForge.API.csproj "JwtAccessToken:Audience" "WorxForge.Client.Dev"
 dotnet user-secrets set --project .\src\WorxForge.API\WorxForge.API.csproj "JwtAccessToken:SigningKey" "<your-dev-signing-key>"
+dotnet user-secrets set --project .\src\WorxForge.API\WorxForge.API.csproj "developmentGoogleSubject" "dev-debug-google-subject-yourname"
+dotnet user-secrets set --project .\src\WorxForge.API\WorxForge.API.csproj "developmentEmail" "your.name@itworx.com"
 ```
+
+These two development keys are used by the `/api/authentication/debug-login` and `/api/authentication/debug-login-helper` endpoints to create or resolve your local test user.
 
 ### Verify secrets
 

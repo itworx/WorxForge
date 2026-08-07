@@ -16,8 +16,6 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
     // page of matching assets and their order, the full AssetSummaryDto is projected separately.
     private sealed record AssetSearchHit(Guid AssetId, double Score);
 
-    public Task<Asset?> GetByIdAsync(Guid assetId, CancellationToken cancellationToken) => throw new NotImplementedException();
-
     public async Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> SearchAsync(AssetSearchCriteria criteria, CancellationToken cancellationToken)
     {
         var (selectBody, parameters) = BuildSearchSql(criteria);
@@ -190,6 +188,98 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
         return (items, total);
     }
 
+    public Task<Asset?> GetByIdAsync(Guid assetId, CancellationToken cancellationToken) =>
+        dbContext.Assets
+            .AsNoTracking()
+            .SingleOrDefaultAsync(asset => asset.AssetId == assetId, cancellationToken);
+
+    public async Task<AssetDetailsDto?> GetDetailsAsync(Guid assetId, Guid requestingUserId, CancellationToken cancellationToken)
+    {
+        var asset = await dbContext.Assets
+            .AsNoTracking()
+            .SingleOrDefaultAsync(existing => existing.AssetId == assetId, cancellationToken);
+
+        if (asset is null)
+        {
+            return null;
+        }
+
+        var assetTypeName = await dbContext.AssetTypes
+            .AsNoTracking()
+            .Where(assetType => assetType.AssetTypeId == asset.AssetTypeId)
+            .Select(assetType => assetType.Name)
+            .SingleOrDefaultAsync(cancellationToken) ?? string.Empty;
+
+        var domainName = await dbContext.BusinessDomains
+            .AsNoTracking()
+            .Where(domain => domain.DomainId == asset.DomainId)
+            .Select(domain => domain.Name)
+            .SingleOrDefaultAsync(cancellationToken) ?? string.Empty;
+
+        var useCaseName = await dbContext.UseCases
+            .AsNoTracking()
+            .Where(useCase => useCase.UseCaseId == asset.UseCaseId)
+            .Select(useCase => useCase.Name)
+            .SingleOrDefaultAsync(cancellationToken) ?? string.Empty;
+
+        var author = await dbContext.Users
+            .AsNoTracking()
+            .Where(user => user.UserId == asset.AuthorId)
+            .Select(user => new { user.DisplayName, user.AvatarUrl })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        var compatibleTools = await dbContext.AssetTools
+            .AsNoTracking()
+            .Where(assetTool => assetTool.AssetId == asset.AssetId)
+            .Join(dbContext.Tools, assetTool => assetTool.ToolId, tool => tool.ToolId, (assetTool, tool) => tool.Name)
+            .ToListAsync(cancellationToken);
+
+        var tags = await dbContext.AssetTags
+            .AsNoTracking()
+            .Where(assetTag => assetTag.AssetId == asset.AssetId)
+            .Join(dbContext.Tags, assetTag => assetTag.TagId, tag => tag.TagId, (assetTag, tag) => tag.Name)
+            .ToListAsync(cancellationToken);
+
+        var reactionCount = await dbContext.Reactions
+            .AsNoTracking()
+            .CountAsync(reaction => reaction.AssetId == asset.AssetId, cancellationToken);
+
+        var commentCount = await dbContext.Comments
+            .AsNoTracking()
+            .CountAsync(comment => comment.AssetId == asset.AssetId && comment.DeletedAt == null, cancellationToken);
+
+        var viewCount = await dbContext.AssetViews
+            .AsNoTracking()
+            .Where(assetView => assetView.AssetId == asset.AssetId)
+            .SumAsync(assetView => (int?)assetView.ViewCount, cancellationToken) ?? 0;
+
+        var isBookmarked = await dbContext.Bookmarks
+            .AsNoTracking()
+            .AnyAsync(bookmark => bookmark.AssetId == asset.AssetId && bookmark.UserId == requestingUserId, cancellationToken);
+
+        return new AssetDetailsDto
+        {
+            AssetId = asset.AssetId,
+            Title = asset.Title,
+            Description = asset.Description,
+            MarkdownContent = asset.MarkdownContent,
+            AssetTypeName = assetTypeName,
+            DomainName = domainName,
+            UseCaseName = useCaseName,
+            CompatibleTools = compatibleTools,
+            Tags = tags,
+            Version = null,
+            AuthorId = asset.AuthorId,
+            AuthorDisplayName = author?.DisplayName ?? string.Empty,
+            AuthorAvatarUrl = author?.AvatarUrl,
+            CreatedAt = asset.CreatedAt,
+            UpdatedAt = asset.UpdatedAt,
+            ReactionCount = reactionCount,
+            CommentCount = commentCount,
+            ViewCount = viewCount,
+            IsBookmarked = isBookmarked
+        };
+    }
     public Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> GetByOwnerAsync(Guid userId, int page, int pageSize, string? sortBy, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<IReadOnlyList<AssetSummaryDto>> GetFeaturedAsync(int limit, CancellationToken cancellationToken) => throw new NotImplementedException();
     public Task<IReadOnlyList<AssetSummaryDto>> GetTrendingAsync(int limit, CancellationToken cancellationToken) => throw new NotImplementedException();
@@ -276,6 +366,16 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
             .Take(limit);
 
         return await SelectAssetSummaries(recentlyUpdatedAssets, userId).ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<AssetSummaryDto>> GetSavedAssetsAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var savedAssets = dbContext.Bookmarks
+            .AsNoTracking()
+            .Where(bookmark => bookmark.UserId == userId)
+            .Join(dbContext.Assets.AsNoTracking(), bookmark => bookmark.AssetId, asset => asset.AssetId, (bookmark, asset) => asset);
+
+        return await SelectAssetSummaries(savedAssets, userId).ToListAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<AssetSummaryDto>> GetRecommendedForYouAsync(Guid userId, int limit, CancellationToken cancellationToken)

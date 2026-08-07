@@ -8,7 +8,7 @@ public sealed class User
     public string Email { get; set; } = string.Empty;
     public bool EmailVerified { get; set; }
     public string Role { get; set; } = string.Empty;
-    public Guid GoogleId { get; set; }
+    public string? GoogleId { get; set; }
     public string? AvatarUrl { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

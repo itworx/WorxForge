@@ -1,5 +1,6 @@
 ﻿using WorxForge.Core.Abstractions;
 using WorxForge.Domain.Commands.Authentication;
+using WorxForge.Domain.Exceptions;
 
 namespace WorxForge.Core.Validators.Authentication;
 
@@ -7,6 +8,18 @@ public sealed class LoginUserCommandValidator : IRequestValidator<LoginUserComma
 {
     public Task ValidateAsync(LoginUserCommand request, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (request is null)
+        {
+            throw new WorxForgeException("Login request is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.IdToken))
+        {
+            throw new WorxForgeException("IdToken is required.");
+        }
+
+        return Task.CompletedTask;
     }
 }
