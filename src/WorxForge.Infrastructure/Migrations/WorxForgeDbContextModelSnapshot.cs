@@ -266,6 +266,10 @@ namespace WorxForge.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("parent_comment_id");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("user_id");
@@ -589,7 +593,7 @@ namespace WorxForge.Infrastructure.Migrations
             modelBuilder.Entity("WorxForge.Domain.Entities.AssetTag", b =>
                 {
                     b.HasOne("WorxForge.Domain.Entities.Asset", null)
-                        .WithMany()
+                        .WithMany("AssetTags")
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -604,7 +608,7 @@ namespace WorxForge.Infrastructure.Migrations
             modelBuilder.Entity("WorxForge.Domain.Entities.AssetTool", b =>
                 {
                     b.HasOne("WorxForge.Domain.Entities.Asset", null)
-                        .WithMany()
+                        .WithMany("AssetTools")
                         .HasForeignKey("AssetId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
@@ -761,6 +765,13 @@ namespace WorxForge.Infrastructure.Migrations
                         .HasForeignKey("WorxForge.Domain.Entities.ReportComment", "ReportId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("WorxForge.Domain.Entities.Asset", b =>
+                {
+                    b.Navigation("AssetTags");
+
+                    b.Navigation("AssetTools");
                 });
 #pragma warning restore 612, 618
         }
