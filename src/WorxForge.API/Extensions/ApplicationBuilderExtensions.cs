@@ -1,5 +1,7 @@
 ﻿using WorxForge.API.EndpointGroups;
+using WorxForge.API.Hubs;
 using WorxForge.API.Middlewares;
+using WorxForge.Domain.Constants;
 
 namespace WorxForge.API.Extensions;
 
@@ -31,6 +33,7 @@ public static class ApplicationBuilderExtensions
         app.MapLibraryEndpoints();
         app.MapNotificationsEndpoints();
         app.MapAdminEndpoints();
+        app.MapHub<NotificationHub>("/hubs/notifications").RequireAuthorization(PolicyConstants.AuthenticatedUser);
         return app;
     }
 }

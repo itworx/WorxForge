@@ -57,6 +57,20 @@ public static class AuthenticationConfigurationExtensions
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnMessageReceived = context =>
+                    {
+                        // Browser WebSocket clients can't set an Authorization header, so SignalR
+                        // sends the access token via the query string instead.
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/notifications"))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    },
                     OnTokenValidated = async context =>
                     {
                         var authSessionRepository = context.HttpContext.RequestServices.GetRequiredService<IAuthSessionRepository>();

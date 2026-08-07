@@ -1,12 +1,15 @@
 ﻿using WorxForge.Core.Abstractions;
+using WorxForge.Core.Interfaces.Services;
+using WorxForge.Domain.Dtos.Notifications;
 using WorxForge.Domain.Queries.Notifications;
 
 namespace WorxForge.Core.Handlers.Notifications;
 
-public sealed class GetUnreadNotificationCountQueryHandler : IQueryHandler<GetUnreadNotificationCountQuery, WorxForge.Domain.Dtos.Notifications.UnreadNotificationCountDto>
+public sealed class GetUnreadNotificationCountQueryHandler(INotificationService notificationService) : IQueryHandler<GetUnreadNotificationCountQuery, UnreadNotificationCountDto>
 {
-    public Task<WorxForge.Domain.Dtos.Notifications.UnreadNotificationCountDto> HandleAsync(GetUnreadNotificationCountQuery query, CancellationToken cancellationToken)
+    public async Task<UnreadNotificationCountDto> HandleAsync(GetUnreadNotificationCountQuery query, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var count = await notificationService.GetUnreadCountAsync(query.UserId, cancellationToken);
+        return new UnreadNotificationCountDto { Count = count };
     }
 }
