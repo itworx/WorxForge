@@ -11,7 +11,5 @@ public interface ILibraryService
     Task<PagedResultDto<AssetSummaryDto>> GetFollowingAssetsAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken);
     Task BookmarkAsync(Guid userId, Guid assetId, CancellationToken cancellationToken);
     Task RemoveBookmarkAsync(Guid userId, Guid assetId, CancellationToken cancellationToken);
-    Task FollowAssetAsync(Guid userId, Guid assetId, CancellationToken cancellationToken);
-    Task UnfollowAssetAsync(Guid userId, Guid assetId, CancellationToken cancellationToken);
 }
 

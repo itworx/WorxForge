@@ -27,7 +27,6 @@ public static class DependencyInjection
         services.AddScoped<IAssetRepository, AssetRepository>();
         services.AddScoped<ICommentRepository, CommentRepository>();
         services.AddScoped<IBookmarkRepository, BookmarkRepository>();
-        services.AddScoped<IAssetFollowRepository, AssetFollowRepository>();
         services.AddScoped<IReactionRepository, ReactionRepository>();
         services.AddScoped<IAssetViewRepository, AssetViewRepository>();
         services.AddScoped<INotificationRepository, NotificationRepository>();
@@ -44,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<IAssetService, AssetService>();
         services.AddScoped<ILibraryService, LibraryService>();
         services.AddScoped<ICommentService, CommentService>();
+        services.AddScoped<IReactionService, ReactionService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IAuthorizationService, AuthorizationService>();

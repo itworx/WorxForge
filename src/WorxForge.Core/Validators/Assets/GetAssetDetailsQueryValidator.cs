@@ -7,6 +7,16 @@ public sealed class GetAssetDetailsQueryValidator : IRequestValidator<GetAssetDe
 {
     public Task ValidateAsync(GetAssetDetailsQuery request, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        if (request.AssetId == Guid.Empty)
+        {
+            throw new ArgumentException("AssetId is required.", nameof(request.AssetId));
+        }
+
+        if (request.RequestingUserId == Guid.Empty)
+        {
+            throw new ArgumentException("RequestingUserId is required.", nameof(request.RequestingUserId));
+        }
+
+        return Task.CompletedTask;
     }
 }
