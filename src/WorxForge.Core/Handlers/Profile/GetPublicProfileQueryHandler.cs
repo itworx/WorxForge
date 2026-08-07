@@ -5,7 +5,7 @@ using WorxForge.Domain.Queries.Profile;
 
 namespace WorxForge.Core.Handlers.Profile;
 
-public sealed class GetPublicProfileQueryHandler : IQueryHandler<GetPublicProfileQuery, PublicProfileDto>
+public sealed class GetPublicProfileQueryHandler : IQueryHandler<GetPublicProfileQuery, ProfileDto>
 {
     private readonly IRequestValidator<GetPublicProfileQuery> _validator;
     private readonly IProfileService _profileService;
@@ -18,7 +18,7 @@ public sealed class GetPublicProfileQueryHandler : IQueryHandler<GetPublicProfil
         _profileService = profileService;
     }
 
-    public async Task<PublicProfileDto> HandleAsync(GetPublicProfileQuery query, CancellationToken cancellationToken)
+    public async Task<ProfileDto> HandleAsync(GetPublicProfileQuery query, CancellationToken cancellationToken)
     {
         await _validator.ValidateAsync(query, cancellationToken);
         return await _profileService.GetPublicProfileAsync(query.TargetUserId, cancellationToken);

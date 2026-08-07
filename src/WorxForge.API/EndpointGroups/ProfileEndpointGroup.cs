@@ -20,7 +20,7 @@ public static class ProfileEndpointGroup
 
     private static async Task<IResult> GetMyProfileAsync(
         HttpContext httpContext,
-        IQueryHandler<GetMyProfileQuery, MyProfileDto> handler,
+        IQueryHandler<GetMyProfileQuery, ProfileDto> handler,
         CancellationToken cancellationToken)
     {
         var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;
@@ -36,7 +36,7 @@ public static class ProfileEndpointGroup
 
     private static async Task<IResult> GetPublicProfileAsync(
         Guid userId,
-        IQueryHandler<GetPublicProfileQuery, PublicProfileDto> handler,
+        IQueryHandler<GetPublicProfileQuery, ProfileDto> handler,
         CancellationToken cancellationToken)
     {
         var response = await handler.HandleAsync(new GetPublicProfileQuery { TargetUserId = userId }, cancellationToken);
