@@ -3,13 +3,16 @@ using WorxForge.Core.Interfaces.Repositories;
 using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Dtos.Common;
 using WorxForge.Domain.Entities;
+using WorxForge.Domain.Enums;
 using WorxForge.Domain.Exceptions;
 
 namespace WorxForge.Infrastructure.Services;
 
 public sealed class CommentService(
     ICommentRepository commentRepository,
-    IAssetRepository assetRepository) : ICommentService
+    IAssetRepository assetRepository,
+    IUserRepository userRepository,
+    INotificationService notificationService) : ICommentService
 {
     public async Task<PagedResultDto<AssetCommentDto>> GetAssetCommentsAsync(Guid assetId, int page, int pageSize, CancellationToken cancellationToken)
     {
@@ -48,11 +51,12 @@ public sealed class CommentService(
 
     public async Task<Guid> CreateCommentAsync(Guid userId, Guid assetId, Guid? parentCommentId, string content, CancellationToken cancellationToken)
     {
-        await EnsureAssetExistsAsync(assetId, cancellationToken);
+        var asset = await EnsureAssetExistsAsync(assetId, cancellationToken);
 
+        Comment? parentComment = null;
         if (parentCommentId.HasValue)
         {
-            var parentComment = await commentRepository.GetByIdAsync(parentCommentId.Value, cancellationToken)
+            parentComment = await commentRepository.GetByIdAsync(parentCommentId.Value, cancellationToken)
                 ?? throw new NotFoundException($"Comment '{parentCommentId}' was not found.");
 
             if (parentComment.AssetId != assetId)
@@ -79,6 +83,9 @@ public sealed class CommentService(
         };
 
         await commentRepository.AddAsync(comment, cancellationToken);
+
+        await NotifyAsync(asset, parentComment, comment, userId, cancellationToken);
+
         return comment.CommentId;
     }
 
@@ -133,6 +140,32 @@ public sealed class CommentService(
     private async Task<Asset> EnsureAssetExistsAsync(Guid assetId, CancellationToken cancellationToken) =>
         await assetRepository.GetByIdAsync(assetId, cancellationToken)
             ?? throw new NotFoundException($"Asset '{assetId}' was not found.");
+
+    private async Task NotifyAsync(Asset asset, Comment? parentComment, Comment newComment, Guid actorUserId, CancellationToken cancellationToken)
+    {
+        // Top-level comment notifies the asset author; a reply notifies the parent comment's author instead.
+        var recipientUserId = parentComment?.UserId ?? asset.AuthorId;
+        if (recipientUserId == actorUserId)
+        {
+            return;
+        }
+
+        var actor = await userRepository.GetByIdAsync(actorUserId, cancellationToken);
+        var actorDisplayName = actor?.DisplayName ?? "Someone";
+
+        var (type, message) = parentComment is null
+            ? (NotificationType.CommentOnAsset, $"{actorDisplayName} commented on your post \"{asset.Title}\".")
+            : (NotificationType.CommentReply, $"{actorDisplayName} replied to your comment on \"{asset.Title}\".");
+
+        await notificationService.SendAsync(
+            recipientUserId: recipientUserId,
+            actorUserId: actorUserId,
+            type: type,
+            message: message,
+            assetId: asset.AssetId,
+            commentId: newComment.CommentId,
+            cancellationToken: cancellationToken);
+    }
 
     private static void EnsureOwnership(Guid authorId, Guid requestingUserId)
     {

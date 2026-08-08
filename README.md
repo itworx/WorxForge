@@ -115,6 +115,7 @@ dotnet ef database update --project .\src\WorxForge.Infrastructure\WorxForge.Inf
 - Do not use `master`
 - No database file is stored in the repository
 - The schema is created in the SQL Server instance you point the connection string at
+- Re-run `dotnet ef database update` after every pull — new migrations aren't applied automatically on startup. If you see `PendingModelChangesWarning`, the model has drifted from the last migration; run `dotnet ef migrations add <Name>` first.
 
 ## NSwag client generation
 

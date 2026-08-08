@@ -3,6 +3,7 @@ using Microsoft.OpenApi;
 using Serilog;
 using WorxForge.API.Configuration;
 using WorxForge.API.Extensions;
+using WorxForge.API.Services;
 using WorxForge.Core.Configuration;
 using WorxForge.Infrastructure.Configuration;
 using WorxForge.Infrastructure.Persistence.Seed;
@@ -39,6 +40,8 @@ builder.Services.AddJwtAccessTokenAuthentication();
 builder.Services.AddWorxForgeAuthorization();
 builder.Services.AddWorxForgeCore();
 builder.Services.AddWorxForgeInfrastructure(builder.Configuration);
+builder.Services.AddSignalR();
+builder.Services.AddHostedService<NotificationDeliveryBackgroundService>();
 
 var app = builder.Build();
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using WorxForge.Core.Interfaces.Notifications;
 using WorxForge.Core.Interfaces.Repositories;
 using WorxForge.Core.Interfaces.Services;
 using WorxForge.Infrastructure.Mapping.Profiles;
@@ -47,6 +48,8 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IAuthorizationService, AuthorizationService>();
+
+        services.AddSingleton<INotificationQueue, NotificationQueue>();
 
         return services;
     }
