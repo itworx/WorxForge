@@ -60,8 +60,8 @@ function SidebarLink({
       aria-current={isActive ? "page" : undefined}
       aria-label={collapsed ? item.label : undefined}
       className={cn(
-        "group relative flex items-center gap-3 overflow-hidden rounded-lg text-sm transition-[background-color,color,transform] motion-safe:duration-180 motion-safe:ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar active:scale-[0.98] motion-reduce:active:scale-100",
-        collapsed ? "justify-center px-2.5 py-2.5" : "px-3 py-2.5",
+        "group relative flex items-center overflow-hidden rounded-lg text-sm transition-[background-color,color,transform] motion-safe:duration-180 motion-safe:ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar active:scale-[0.98] motion-reduce:active:scale-100",
+        collapsed ? "justify-center gap-0 px-2.5 py-2.5" : "gap-3 px-3 py-2.5",
         !collapsed && "motion-safe:hover:translate-x-0.5",
         shouldAnimate && "wf-sidebar-item-enter motion-safe:opacity-0",
         isActive && "wf-rainbow-active",
@@ -86,7 +86,7 @@ function SidebarLink({
         className={cn(
           "flex min-w-0 items-center justify-between gap-2 overflow-hidden transition-[opacity,max-width,transform] motion-safe:duration-220 motion-safe:ease-out motion-reduce:transition-none",
           collapsed
-            ? "max-w-0 flex-none opacity-0 -translate-y-1 scale-[0.985]"
+            ? "max-w-0 flex-none justify-center opacity-0 -translate-y-1 scale-[0.985]"
             : "max-w-[12rem] flex-1 opacity-100 translate-y-0 scale-100"
         )}
       >
