@@ -16,7 +16,7 @@ public sealed class ProfileService(IUserRepository userRepository) : IProfileSer
 
         if (user is null)
         {
-            throw new NotFoundException("User was not found.", ErrorCodes.User.NotFound);
+            throw new NotFoundException(Errors.UserNotFound);
         }
 
         return new ProfileDto
@@ -34,7 +34,7 @@ public sealed class ProfileService(IUserRepository userRepository) : IProfileSer
         var user = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
         if (user is null)
         {
-            throw new NotFoundException("User was not found.", ErrorCodes.User.NotFound);
+            throw new NotFoundException(Errors.UserNotFound);
         }
 
         return new ProfileDto
@@ -52,7 +52,7 @@ public sealed class ProfileService(IUserRepository userRepository) : IProfileSer
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
         if (user is null)
         {
-            throw new NotFoundException("User was not found.", ErrorCodes.User.NotFound);
+            throw new NotFoundException(Errors.UserNotFound);
         }
 
         var normalizedDisplayName = displayName.Trim();
@@ -62,7 +62,7 @@ public sealed class ProfileService(IUserRepository userRepository) : IProfileSer
         var existingByUsername = await _userRepository.GetByUsernameAsync(normalizedUsername, cancellationToken);
         if (existingByUsername is not null && existingByUsername.UserId != userId)
         {
-            throw new ConflictException("Username is already in use.", ErrorCodes.User.UsernameAlreadyInUse);
+            throw new ConflictException(Errors.UserUsernameAlreadyInUse);
         }
 
         user.DisplayName = normalizedDisplayName;

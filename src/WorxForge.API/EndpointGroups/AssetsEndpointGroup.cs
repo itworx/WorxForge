@@ -11,6 +11,7 @@ using WorxForge.Domain.Commands.Library;
 using WorxForge.Domain.Constants;
 using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Dtos.Explore;
+using WorxForge.Domain.Errors;
 using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Queries.Assets;
 using WorxForge.Domain.Queries.Lookup;
@@ -129,7 +130,7 @@ public static class AssetsEndpointGroup
     {
         var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;
         if (!Guid.TryParse(userIdClaim, out var authorId))
-            throw new UnauthorizedException("Authenticated user identifier is invalid.");
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
 
         var command = new CreateAssetCommand
         {
@@ -157,7 +158,7 @@ public static class AssetsEndpointGroup
     {
         var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;
         if (!Guid.TryParse(userIdClaim, out var requestingUserId))
-            throw new UnauthorizedException("Authenticated user identifier is invalid.");
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
 
         var command = new UpdateAssetCommand
         {
@@ -185,7 +186,7 @@ public static class AssetsEndpointGroup
     {
         var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;
         if (!Guid.TryParse(userIdClaim, out var requestingUserId))
-            throw new UnauthorizedException("Authenticated user identifier is invalid.");
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
 
         var command = new DeleteAssetCommand
         {

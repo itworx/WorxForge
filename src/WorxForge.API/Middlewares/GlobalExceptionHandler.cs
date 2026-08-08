@@ -37,13 +37,18 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
         RequestValidationException validationException => (
             StatusCodes.Status400BadRequest,
             new ApiErrorResponse(validationException.Code, validationException.Message, validationException.Errors)),
+        WorxForgeException { Type: ErrorType.Unexpected } => (
+            StatusCodes.Status500InternalServerError,
+            UnexpectedResponse),
         WorxForgeException worxForgeException => (
             MapStatusCode(worxForgeException.Type),
             new ApiErrorResponse(worxForgeException.Code, worxForgeException.Message)),
         _ => (
             StatusCodes.Status500InternalServerError,
-            new ApiErrorResponse(ErrorCodes.General.Unexpected, "An unexpected error occurred. Please try again later."))
+            UnexpectedResponse)
     };
+
+    private static readonly ApiErrorResponse UnexpectedResponse = new(Errors.GeneralUnexpected.Code, Errors.GeneralUnexpected.Message);
 
     private static int MapStatusCode(ErrorType errorType) => errorType switch
     {

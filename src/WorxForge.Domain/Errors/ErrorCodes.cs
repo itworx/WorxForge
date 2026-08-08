@@ -41,6 +41,7 @@ public static class ErrorCodes
     public static class Asset
     {
         public const string NotFound = "Asset.NotFound";
+        public const string Forbidden = "Asset.Forbidden";
     }
 
     public static class AssetType
@@ -66,11 +67,13 @@ public static class ErrorCodes
     public static class Comment
     {
         public const string NotFound = "Comment.NotFound";
+        public const string Forbidden = "Comment.Forbidden";
     }
 
     public static class Notification
     {
         public const string NotFound = "Notification.NotFound";
         public const string AlreadyRead = "Notification.AlreadyRead";
+        public const string Forbidden = "Notification.Forbidden";
     }
 }

@@ -1,46 +1,41 @@
 using FluentAssertions;
-using WorxForge.Domain.Errors;
 using WorxForge.Domain.Exceptions;
+using ErrorsCatalog = WorxForge.Domain.Errors.Errors;
+using ErrorCodes = WorxForge.Domain.Errors.ErrorCodes;
+using ErrorType = WorxForge.Domain.Errors.ErrorType;
 
 namespace WorxForge.Domain.UnitTests.Errors;
 
 public sealed class ExceptionErrorMappingTests
 {
     [Fact]
-    public void NotFoundException_DefaultsToResourceNotFoundCode_AndNotFoundType()
+    public void NotFoundException_CarriesCodeAndMessage_FromCatalogError()
     {
-        var exception = new NotFoundException("Widget was not found.");
-
-        exception.Code.Should().Be(ErrorCodes.Resource.NotFound);
-        exception.Type.Should().Be(ErrorType.NotFound);
-        exception.Message.Should().Be("Widget was not found.");
-    }
-
-    [Fact]
-    public void NotFoundException_AcceptsExplicitCode()
-    {
-        var exception = new NotFoundException("User was not found.", ErrorCodes.User.NotFound);
+        var exception = new NotFoundException(ErrorsCatalog.UserNotFound);
 
         exception.Code.Should().Be(ErrorCodes.User.NotFound);
         exception.Type.Should().Be(ErrorType.NotFound);
+        exception.Message.Should().Be(ErrorsCatalog.UserNotFound.Message);
     }
 
     [Fact]
-    public void ConflictException_DefaultsToResourceConflictCode_AndConflictType()
+    public void ConflictException_CarriesCodeAndMessage_FromCatalogError()
     {
-        var exception = new ConflictException("Already exists.");
+        var exception = new ConflictException(ErrorsCatalog.UserUsernameAlreadyInUse);
 
-        exception.Code.Should().Be(ErrorCodes.Resource.Conflict);
+        exception.Code.Should().Be(ErrorCodes.User.UsernameAlreadyInUse);
         exception.Type.Should().Be(ErrorType.Conflict);
+        exception.Message.Should().Be(ErrorsCatalog.UserUsernameAlreadyInUse.Message);
     }
 
     [Fact]
-    public void ForbiddenException_DefaultsToAuthorizationForbiddenCode_AndForbiddenType()
+    public void ForbiddenException_CarriesCodeAndMessage_FromCatalogError()
     {
-        var exception = new ForbiddenException("Not allowed.");
+        var exception = new ForbiddenException(ErrorsCatalog.AuthorizationForbidden);
 
         exception.Code.Should().Be(ErrorCodes.Authorization.Forbidden);
         exception.Type.Should().Be(ErrorType.Forbidden);
+        exception.Message.Should().Be(ErrorsCatalog.AuthorizationForbidden.Message);
     }
 
     [Fact]
@@ -53,12 +48,13 @@ public sealed class ExceptionErrorMappingTests
     }
 
     [Fact]
-    public void UnauthorizedException_DefaultsToInvalidCredentialsCode_AndUnauthorizedType()
+    public void UnauthorizedException_CarriesCodeAndMessage_FromCatalogError()
     {
-        var exception = new UnauthorizedException("Token is invalid.");
+        var exception = new UnauthorizedException(ErrorsCatalog.AuthenticationInvalidCredentials);
 
         exception.Code.Should().Be(ErrorCodes.Authentication.InvalidCredentials);
         exception.Type.Should().Be(ErrorType.Unauthorized);
+        exception.Message.Should().Be(ErrorsCatalog.AuthenticationInvalidCredentials.Message);
     }
 
     [Fact]

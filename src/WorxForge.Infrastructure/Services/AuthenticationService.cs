@@ -78,7 +78,7 @@ public sealed class AuthenticationService(
 
         if (!string.Equals(user.GoogleId, developmentGoogleSubject, StringComparison.Ordinal))
         {
-            throw new ConflictException("Test user email is linked to a different Google account.", ErrorCodes.Authentication.EmailAlreadyLinked);
+            throw new ConflictException(Errors.AuthenticationEmailAlreadyLinked);
         }
 
         return await BuildAccessTokenAsync(user, cancellationToken);
@@ -122,7 +122,7 @@ public sealed class AuthenticationService(
         }
         catch (InvalidJwtException ex)
         {
-            throw new UnauthorizedException("Google ID token is invalid.", ex);
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials, ex);
         }
         catch (OperationCanceledException)
         {
@@ -130,17 +130,17 @@ public sealed class AuthenticationService(
         }
         catch (Exception ex)
         {
-            throw new UnauthorizedException("Failed to validate Google ID token.", ex);
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials, ex);
         }
 
         if (!payload.EmailVerified || string.IsNullOrWhiteSpace(payload.Email))
         {
-            throw new UnauthorizedException("Google account email must be verified.", ErrorCodes.Authentication.EmailNotVerified);
+            throw new UnauthorizedException(Errors.AuthenticationEmailNotVerified);
         }
 
         if (string.IsNullOrWhiteSpace(payload.Subject))
         {
-            throw new UnauthorizedException("Google subject is missing from ID token payload.", ErrorCodes.Authentication.InvalidCredentials);
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
         }
 
         var googleSubject = payload.Subject.Trim();
@@ -173,7 +173,7 @@ public sealed class AuthenticationService(
 
         if (!string.Equals(user.GoogleId, googleSubject, StringComparison.Ordinal))
         {
-            throw new ConflictException("This email is already linked to a different Google account.", ErrorCodes.Authentication.EmailAlreadyLinked);
+            throw new ConflictException(Errors.AuthenticationEmailAlreadyLinked);
         }
 
         return await BuildAccessTokenAsync(user, cancellationToken);
@@ -200,7 +200,7 @@ public sealed class AuthenticationService(
 
         if (session is null || session.UserId != userId)
         {
-            throw new NotFoundException("Session was not found.", ErrorCodes.Authentication.SessionNotFound);
+            throw new NotFoundException(Errors.AuthenticationSessionNotFound);
         }
 
         await _authSessionRepository.RevokeAsync(sessionId, cancellationToken);
@@ -280,7 +280,7 @@ public sealed class AuthenticationService(
     {
         if (string.IsNullOrWhiteSpace(payload.Subject))
         {
-            throw new UnauthorizedException("Google subject is missing from ID token payload.", ErrorCodes.Authentication.InvalidCredentials);
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
         }
 
         var displayName = string.IsNullOrWhiteSpace(payload.Name) ? username : payload.Name.Trim();

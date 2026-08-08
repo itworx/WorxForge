@@ -17,10 +17,10 @@ public sealed class GlobalExceptionHandlerTests
     public static IEnumerable<object[]> KnownExceptionCases()
     {
         yield return [new ValidationException("Name is required."), StatusCodes.Status400BadRequest, ErrorCodes.Validation.Failed];
-        yield return [new UnauthorizedException("Invalid credentials."), StatusCodes.Status401Unauthorized, ErrorCodes.Authentication.InvalidCredentials];
-        yield return [new ForbiddenException("Not allowed."), StatusCodes.Status403Forbidden, ErrorCodes.Authorization.Forbidden];
-        yield return [new NotFoundException("User was not found.", ErrorCodes.User.NotFound), StatusCodes.Status404NotFound, ErrorCodes.User.NotFound];
-        yield return [new ConflictException("Already exists.", ErrorCodes.User.UsernameAlreadyInUse), StatusCodes.Status409Conflict, ErrorCodes.User.UsernameAlreadyInUse];
+        yield return [new UnauthorizedException(Errors.AuthenticationInvalidCredentials), StatusCodes.Status401Unauthorized, ErrorCodes.Authentication.InvalidCredentials];
+        yield return [new ForbiddenException(Errors.AuthorizationForbidden), StatusCodes.Status403Forbidden, ErrorCodes.Authorization.Forbidden];
+        yield return [new NotFoundException(Errors.UserNotFound), StatusCodes.Status404NotFound, ErrorCodes.User.NotFound];
+        yield return [new ConflictException(Errors.UserUsernameAlreadyInUse), StatusCodes.Status409Conflict, ErrorCodes.User.UsernameAlreadyInUse];
     }
 
     [Theory]
@@ -68,6 +68,21 @@ public sealed class GlobalExceptionHandlerTests
         message.Should().NotContain("hunter2");
         message.Should().NotContain(exception.GetType().FullName);
         body.TryGetProperty("stackTrace", out _).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task TryHandleAsync_UnexpectedTypeWorxForgeException_Returns500WithGenericMessage_AndNoInternalDetails()
+    {
+        // A plain WorxForgeException (e.g. thrown for missing startup configuration) still carries Type.Unexpected;
+        // it must never leak its own message to the client even though it is a "known" exception type.
+        var exception = new WorxForgeException("JwtAccessToken configuration is incomplete: missing SigningKey.");
+
+        var (statusCode, body) = await InvokeAsync(exception);
+
+        statusCode.Should().Be(StatusCodes.Status500InternalServerError);
+        body.GetProperty("code").GetString().Should().Be(ErrorCodes.General.Unexpected);
+        body.GetProperty("message").GetString().Should().Be(Errors.GeneralUnexpected.Message);
+        body.GetProperty("message").GetString().Should().NotContain("SigningKey");
     }
 
     private static async Task<(int StatusCode, JsonElement Body)> InvokeAsync(Exception exception)

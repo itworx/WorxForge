@@ -20,7 +20,7 @@ public sealed class ReactionService(
         var asset = await assetRepository.GetByIdAsync(assetId, cancellationToken);
         if (asset is null)
         {
-            throw new NotFoundException($"Asset '{assetId}' was not found.", ErrorCodes.Asset.NotFound);
+            throw new NotFoundException(Errors.AssetNotFound);
         }
 
         var normalizedReactionType = ReactionTypes.Normalize(reactionType);
@@ -50,7 +50,7 @@ public sealed class ReactionService(
         var asset = await assetRepository.GetByIdAsync(assetId, cancellationToken);
         if (asset is null)
         {
-            throw new NotFoundException($"Asset '{assetId}' was not found.", ErrorCodes.Asset.NotFound);
+            throw new NotFoundException(Errors.AssetNotFound);
         }
 
         await reactionRepository.DeleteAsync(userId, assetId, cancellationToken);

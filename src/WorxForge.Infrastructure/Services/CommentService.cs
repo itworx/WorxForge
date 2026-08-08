@@ -4,6 +4,7 @@ using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Dtos.Common;
 using WorxForge.Domain.Entities;
 using WorxForge.Domain.Enums;
+using WorxForge.Domain.Errors;
 using WorxForge.Domain.Exceptions;
 
 namespace WorxForge.Infrastructure.Services;
@@ -33,11 +34,11 @@ public sealed class CommentService(
             await EnsureAssetExistsAsync(assetId, cancellationToken);
 
             var comment = await commentRepository.GetByIdAsync(commentId, cancellationToken)
-                ?? throw new NotFoundException($"Comment '{commentId}' was not found.");
+                ?? throw new NotFoundException(Errors.CommentNotFound);
 
             if (comment.AssetId != assetId)
             {
-                throw new NotFoundException($"Comment '{commentId}' was not found.");
+                throw new NotFoundException(Errors.CommentNotFound);
             }
 
             if (comment.ParentCommentId.HasValue)
@@ -46,7 +47,7 @@ public sealed class CommentService(
             }
 
         return await commentRepository.GetThreadAsync(assetId, commentId, cancellationToken)
-            ?? throw new NotFoundException($"Comment '{commentId}' was not found.");
+            ?? throw new NotFoundException(Errors.CommentNotFound);
     }
 
     public async Task<Guid> CreateCommentAsync(Guid userId, Guid assetId, Guid? parentCommentId, string content, CancellationToken cancellationToken)
@@ -57,11 +58,11 @@ public sealed class CommentService(
         if (parentCommentId.HasValue)
         {
             parentComment = await commentRepository.GetByIdAsync(parentCommentId.Value, cancellationToken)
-                ?? throw new NotFoundException($"Comment '{parentCommentId}' was not found.");
+                ?? throw new NotFoundException(Errors.CommentNotFound);
 
             if (parentComment.AssetId != assetId)
             {
-                throw new NotFoundException($"Comment '{parentCommentId}' was not found.");
+                throw new NotFoundException(Errors.CommentNotFound);
             }
 
             if (parentComment.ParentCommentId.HasValue)
@@ -92,11 +93,11 @@ public sealed class CommentService(
     public async Task UpdateCommentAsync(Guid assetId, Guid commentId, Guid requestingUserId, string content, CancellationToken cancellationToken)
     {
         var comment = await commentRepository.GetByIdAsync(commentId, cancellationToken)
-            ?? throw new NotFoundException($"Comment '{commentId}' was not found.");
+            ?? throw new NotFoundException(Errors.CommentNotFound);
 
         if (comment.AssetId != assetId)
         {
-            throw new NotFoundException($"Comment '{commentId}' was not found.");
+            throw new NotFoundException(Errors.CommentNotFound);
         }
 
         EnsureOwnership(comment.UserId, requestingUserId);
@@ -110,18 +111,18 @@ public sealed class CommentService(
     public async Task DeleteCommentAsync(Guid assetId, Guid commentId, Guid requestingUserId, CancellationToken cancellationToken)
     {
         var comment = await commentRepository.GetByIdAsync(commentId, cancellationToken)
-            ?? throw new NotFoundException($"Comment '{commentId}' was not found.");
+            ?? throw new NotFoundException(Errors.CommentNotFound);
 
         if (comment.AssetId != assetId)
         {
-            throw new NotFoundException($"Comment '{commentId}' was not found.");
+            throw new NotFoundException(Errors.CommentNotFound);
         }
 
         var asset = await EnsureAssetExistsAsync(assetId, cancellationToken);
 
         if (comment.UserId != requestingUserId && asset.AuthorId != requestingUserId)
         {
-            throw new ForbiddenException("You are not allowed to delete this comment.");
+            throw new ForbiddenException(Errors.CommentForbidden);
         }
 
         var commentIdsToDelete = new List<Guid> { commentId };
@@ -129,7 +130,7 @@ public sealed class CommentService(
         if (comment.ParentCommentId is null)
         {
             var thread = await commentRepository.GetThreadAsync(assetId, commentId, cancellationToken)
-                ?? throw new NotFoundException($"Comment '{commentId}' was not found.");
+                ?? throw new NotFoundException(Errors.CommentNotFound);
 
             commentIdsToDelete.AddRange(thread.Replies.Select(reply => reply.CommentId));
         }
@@ -139,7 +140,7 @@ public sealed class CommentService(
 
     private async Task<Asset> EnsureAssetExistsAsync(Guid assetId, CancellationToken cancellationToken) =>
         await assetRepository.GetByIdAsync(assetId, cancellationToken)
-            ?? throw new NotFoundException($"Asset '{assetId}' was not found.");
+            ?? throw new NotFoundException(Errors.AssetNotFound);
 
     private async Task NotifyAsync(Asset asset, Comment? parentComment, Comment newComment, Guid actorUserId, CancellationToken cancellationToken)
     {
@@ -171,7 +172,7 @@ public sealed class CommentService(
     {
         if (authorId != requestingUserId)
         {
-            throw new ForbiddenException("You are not allowed to modify this comment.");
+            throw new ForbiddenException(Errors.CommentForbidden);
         }
     }
 }
