@@ -6,6 +6,12 @@ import { ROUTES } from "../../constants/routes.constants";
 import { APP_NAME } from "../../constants/app.constants";
 import { Logo } from "./Logo";
 
+type HeaderBrandMode = "full" | "nameOnly" | "hidden";
+
+type HeaderProps = {
+  brandMode?: HeaderBrandMode;
+};
+
 function getInitials(displayName: string): string {
   return displayName
     .split(" ")
@@ -15,16 +21,22 @@ function getInitials(displayName: string): string {
     .join("");
 }
 
-export function Header() {
+export function Header({ brandMode = "full" }: HeaderProps) {
   const { user } = useAuthContext();
   const { unreadCount } = useNotificationContext();
+  const showBrand = brandMode !== "hidden";
+  const showLogo = brandMode === "full";
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-secondary/20 bg-white px-4 sm:px-6">
-      <Link to={ROUTES.HOME} className="flex items-center gap-2">
-        <Logo className="size-8" />
-        <span className="text-lg font-semibold text-text">{APP_NAME}</span>
-      </Link>
+      {showBrand ? (
+        <Link to={ROUTES.HOME} className="flex items-center gap-2">
+          {showLogo ? <Logo className="size-8" /> : null}
+          <span className="text-lg font-semibold text-text">{APP_NAME}</span>
+        </Link>
+      ) : (
+        <div aria-hidden="true" className="h-8 w-8" />
+      )}
 
       <div className="flex items-center gap-3">
         <Link

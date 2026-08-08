@@ -30,6 +30,11 @@ export function MainLayout() {
   const mobileCloseButtonRef = useRef<HTMLButtonElement>(null);
   const isDesktopSidebarClosed = desktopSidebarState === "closed";
   const isDesktopSidebarCollapsed = desktopSidebarState === "collapsed";
+  const desktopHeaderBrandMode = isDesktopSidebarClosed
+    ? "full"
+    : isDesktopSidebarCollapsed
+      ? "nameOnly"
+      : "hidden";
 
   const handleDesktopSidebarToggle = () => {
     setDesktopSidebarState((currentState) => {
@@ -227,8 +232,13 @@ export function MainLayout() {
         </div>
 
         <div ref={contentRef} className="flex min-w-0 flex-1 flex-col">
-          <div className="hidden lg:block">
-            <Header />
+          <div
+            className={cn(
+              "hidden lg:block",
+              desktopHeaderBrandMode === "hidden" ? "pl-4" : "pl-20"
+            )}
+          >
+            <Header brandMode={desktopHeaderBrandMode} />
           </div>
 
           <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background px-4 lg:hidden">
