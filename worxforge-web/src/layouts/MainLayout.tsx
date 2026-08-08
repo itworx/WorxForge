@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AppSidebar } from "../components/AppSidebar";
@@ -252,4 +252,3 @@ export function MainLayout() {
     </div>
   );
 }
-
