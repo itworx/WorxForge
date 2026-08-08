@@ -120,11 +120,11 @@ export function MainLayout() {
   }, [isMobileSidebarOpen]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-text">
       <button
         type="button"
         className={cn(
-          "fixed top-4 z-50 hidden size-11 items-center justify-center rounded-xl border border-border bg-background/95 text-foreground shadow-sm backdrop-blur-sm transition-[left,background-color,color,transform] motion-safe:duration-300 motion-safe:ease-in-out motion-reduce:transition-none hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] motion-reduce:active:scale-100 lg:inline-flex",
+          "fixed top-4 z-50 hidden size-11 items-center justify-center rounded-xl border border-border bg-background/95 text-text shadow-sm backdrop-blur-sm transition-[left,background-color,color,transform] motion-safe:duration-300 motion-safe:ease-in-out motion-reduce:transition-none hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] motion-reduce:active:scale-100 lg:inline-flex",
           isDesktopSidebarClosed
             ? "left-4"
             : isDesktopSidebarCollapsed

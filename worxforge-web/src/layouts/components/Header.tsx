@@ -33,7 +33,7 @@ export function Header({ brandMode = "full", brandOffsetClassName }: HeaderProps
       <Link
         to={ROUTES.HOME}
         className={cn(
-          "flex items-center gap-0 text-foreground transition-[margin-left] motion-safe:duration-300 motion-safe:ease-in-out motion-reduce:transition-none",
+          "flex items-center gap-0 text-text transition-[margin-left] motion-safe:duration-300 motion-safe:ease-in-out motion-reduce:transition-none",
           brandOffsetClassName
         )}
       >
@@ -49,7 +49,7 @@ export function Header({ brandMode = "full", brandOffsetClassName }: HeaderProps
         </span>
         <span
           className={cn(
-            "text-lg font-semibold text-foreground transition-transform motion-safe:duration-300 motion-safe:ease-in-out motion-reduce:transition-none",
+            "text-lg font-semibold text-text transition-transform motion-safe:duration-300 motion-safe:ease-in-out motion-reduce:transition-none",
             showLogo ? "translate-x-0" : "-translate-x-0.5"
           )}
         >
@@ -61,7 +61,7 @@ export function Header({ brandMode = "full", brandOffsetClassName }: HeaderProps
         <Link
           to={ROUTES.NOTIFICATIONS}
           aria-label="Notifications"
-          className="relative rounded-full p-2 text-foreground/70 transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="relative rounded-full p-2 text-text/70 transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <FaRegBell aria-hidden="true" className="size-5" />
           {unreadCount > 0 && (
@@ -75,7 +75,7 @@ export function Header({ brandMode = "full", brandOffsetClassName }: HeaderProps
           {user?.avatarUrl ? (
             <img src={user.avatarUrl} alt={user.displayName} className="size-9 rounded-full object-cover" />
           ) : user ? (
-            <span className="flex size-9 items-center justify-center rounded-full bg-muted text-sm font-semibold text-foreground">
+            <span className="flex size-9 items-center justify-center rounded-full bg-muted text-sm font-semibold text-text">
               {getInitials(user.displayName)}
             </span>
           ) : (
