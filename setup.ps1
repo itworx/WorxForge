@@ -74,10 +74,11 @@ $requiredSecrets = @(
     'JwtAccessToken:SigningKey',
     'JwtAccessToken:ExpirationMinutes',
     'ConnectionStrings:Default',
-    'Authentication:Google:ClientId'
+    'Authentication:Google:ClientId',
+    'Cors:AllowedOrigins:0'
 )
 
-$secretsJson = dotnet user-secrets list --project $ApiProject 2>$null
+$secretsJson = (dotnet user-secrets list --project $ApiProject 2>$null) -join "`n"
 $missingSecrets = @()
 
 foreach ($secret in $requiredSecrets) {
@@ -93,7 +94,7 @@ if ($missingSecrets.Count -gt 0) {
         Write-Host "         dotnet user-secrets set `"$s`" `"<value>`" --project src/WorxForge.API" -ForegroundColor Yellow
     }
     Write-Host ''
-    Write-Host '  See docs/architecture/authentication.md for required values.' -ForegroundColor Yellow
+    Write-Host '  See README.md "Local development configuration" for required values.' -ForegroundColor Yellow
 } else {
     Write-Ok 'All required user-secrets are present.'
 }
