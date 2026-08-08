@@ -10,3 +10,27 @@ export const httpClient = {
   put: <T>(path: string, body: unknown) => request<T>(path, { method: "PUT", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
 };
+
+export interface FetchLike {
+  fetch(url: RequestInfo, init?: RequestInit): Promise<Response>;
+}
+
+/**
+ * TEMPORARY: attaches a bearer token from VITE_DEV_AUTH_TOKEN to every request so the
+ * generated API clients can be exercised before real authentication is wired up.
+ * Remove this once login + tokenService are implemented.
+ */
+export function createDevAuthenticatedFetch(): FetchLike {
+  const devToken = import.meta.env.VITE_DEV_AUTH_TOKEN as string | undefined;
+
+  return {
+    fetch(url, init) {
+      if (!devToken) return fetch(url, init);
+
+      const headers = new Headers(init?.headers);
+      headers.set("Authorization", `Bearer ${devToken}`);
+      return fetch(url, { ...init, headers });
+    }
+  };
+}
+
