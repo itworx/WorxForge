@@ -64,7 +64,7 @@ function SidebarLink({
         collapsed ? "justify-center px-2.5 py-2.5" : "px-3 py-2.5",
         !collapsed && "motion-safe:hover:translate-x-0.5",
         shouldAnimate && "wf-sidebar-item-enter motion-safe:opacity-0",
-        isActive && !collapsed && "wf-rainbow-active",
+        isActive && "wf-rainbow-active",
         item.emphasized
           ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm hover:bg-sidebar-primary/90 active:bg-sidebar-primary/80"
           : isActive
