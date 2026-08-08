@@ -32,7 +32,7 @@ public sealed class NotificationRepository(WorxForgeDbContext dbContext) : INoti
             .Select(notification => new NotificationDto
             {
                 NotificationId = notification.NotificationId,
-                Type = Enum.Parse<NotificationType>(notification.Type),
+                Type = ParseNotificationType(notification.Type),
                 Message = notification.Message,
                 AssetId = notification.AssetId,
                 CommentId = notification.CommentId,
@@ -43,6 +43,9 @@ public sealed class NotificationRepository(WorxForgeDbContext dbContext) : INoti
 
         return (items, total);
     }
+
+    private static NotificationType ParseNotificationType(string type) =>
+        Enum.TryParse<NotificationType>(type, out var parsed) ? parsed : NotificationType.Unknown;
 
     public Task<int> GetUnreadCountAsync(Guid userId, CancellationToken cancellationToken) =>
         dbContext.Notifications.CountAsync(notification => notification.RecipientUserId == userId && !notification.IsRead, cancellationToken);
