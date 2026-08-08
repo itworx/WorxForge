@@ -40,6 +40,11 @@ public sealed class NotificationService(
             throw new ForbiddenException("You are not allowed to access this notification.");
         }
 
+        if (notification.IsRead)
+        {
+            throw new ConflictException($"Notification '{notificationId}' has already been read.");
+        }
+
         await notificationRepository.MarkAsReadAsync(notificationId, cancellationToken);
     }
 
