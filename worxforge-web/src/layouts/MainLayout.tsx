@@ -3,6 +3,8 @@ import { Menu, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Outlet, useLocation } from "react-router-dom";
 import { AppSidebar } from "../components/AppSidebar";
 import { cn } from "../lib/utils";
+import { Header } from "./components/Header";
+import { Footer } from "./components/Footer";
 
 type DesktopSidebarState = "closed" | "expanded" | "collapsed";
 
@@ -225,6 +227,10 @@ export function MainLayout() {
         </div>
 
         <div ref={contentRef} className="flex min-w-0 flex-1 flex-col">
+          <div className="hidden lg:block">
+            <Header />
+          </div>
+
           <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background px-4 lg:hidden">
             <button
               type="button"
@@ -247,6 +253,8 @@ export function MainLayout() {
               <Outlet />
             </div>
           </main>
+
+          <Footer />
         </div>
       </div>
     </div>
