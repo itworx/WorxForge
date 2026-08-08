@@ -7,7 +7,7 @@ export function HomePage() {
   const { data, isLoading, isError } = useHomeDashboard();
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-10 sm:px-6 lg:py-14">
+    <div className="mx-auto flex flex-col gap-10 px-4 py-10 sm:px-6 lg:py-14">
       <HeroSection />
 
       {isError && (

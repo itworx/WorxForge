@@ -25,7 +25,7 @@ export function AssetSection({ title, assets, isLoading = false }: AssetSectionP
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
           {Array.from({ length: 4 }).map((_, index) => (
             <div key={index} className="h-52 animate-pulse rounded-xl border border-secondary/30 bg-secondary/10" />
           ))}
