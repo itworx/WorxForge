@@ -27,7 +27,7 @@ public static class ProfileEndpointGroup
 
         if (!Guid.TryParse(userIdClaim, out var userId))
         {
-            throw new WorxForgeException("Authenticated user identifier is invalid.");
+            throw new UnauthorizedException("Authenticated user identifier is invalid.");
         }
 
         var response = await handler.HandleAsync(new GetMyProfileQuery { UserId = userId }, cancellationToken);
@@ -53,7 +53,7 @@ public static class ProfileEndpointGroup
 
         if (!Guid.TryParse(userIdClaim, out var userId))
         {
-            throw new WorxForgeException("Authenticated user identifier is invalid.");
+            throw new UnauthorizedException("Authenticated user identifier is invalid.");
         }
 
         await handler.HandleAsync(
