@@ -36,6 +36,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 builder.Services.AddOpenApi();
 builder.Services.AddValidatorsFromAssembly(typeof(WorxForge.Core.Configuration.DependencyInjection).Assembly);
+builder.Services.AddWorxForgeCors(builder.Configuration);
 builder.Services.AddJwtAccessTokenAuthentication();
 builder.Services.AddWorxForgeAuthorization();
 builder.Services.AddWorxForgeCore();
