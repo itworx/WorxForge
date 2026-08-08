@@ -1,4 +1,4 @@
-﻿import { createBrowserRouter } from "react-router-dom";
+﻿import { createBrowserRouter, Navigate } from "react-router-dom";
 import { MainLayout } from "../layouts/MainLayout";
 import { AdminLayout } from "../layouts/AdminLayout";
 import { AuthLayout } from "../layouts/AuthLayout";
@@ -12,6 +12,7 @@ import { ResetPasswordPage } from "../features/authentication/pages/ResetPasswor
 import { HomePage } from "../features/home/pages/HomePage";
 import { ExplorePage } from "../features/explore/pages/ExplorePage";
 import { AssetDetailsPage } from "../features/assets/pages/AssetDetailsPage";
+import { CreateAssetPage } from "../features/assets/pages/CreateAssetPage";
 import { MyProfilePage } from "../features/profile/pages/MyProfilePage";
 import { PublicProfilePage } from "../features/profile/pages/PublicProfilePage";
 import { SettingsPage } from "../features/settings/pages/SettingsPage";
@@ -25,46 +26,51 @@ import { AdminReportsPage } from "../features/admin/pages/AdminReportsPage";
 import { NotFoundPage } from "../pages/NotFoundPage";
 import { UnauthorizedPage } from "../pages/UnauthorizedPage";
 import { ErrorPage } from "../pages/ErrorPage";
+import { ROUTES } from "../constants/routes.constants";
+
+const toChildPath = (path: string) => path.replace(/^\//, "");
 
 export const appRouter = createBrowserRouter([
   {
-    path: "/auth",
+    path: toChildPath(ROUTES.AUTH.LOGIN).split("/").slice(0, -1).join("/"),
     element: <AuthLayout />,
     children: [
-      { path: "login", element: <LoginPage /> },
-      { path: "register", element: <RegisterPage /> },
-      { path: "verify-email", element: <VerifyEmailPage /> },
-      { path: "forgot-password", element: <ForgotPasswordPage /> },
-      { path: "reset-password/:token", element: <ResetPasswordPage /> }
+      { path: toChildPath(ROUTES.AUTH.LOGIN).split("/").at(-1), element: <LoginPage /> },
+      { path: toChildPath(ROUTES.AUTH.REGISTER).split("/").at(-1), element: <RegisterPage /> },
+      { path: toChildPath(ROUTES.AUTH.VERIFY_EMAIL).split("/").at(-1), element: <VerifyEmailPage /> },
+      { path: toChildPath(ROUTES.AUTH.FORGOT_PASSWORD).split("/").at(-1), element: <ForgotPasswordPage /> },
+      { path: toChildPath(ROUTES.AUTH.RESET_PASSWORD(":token")).split("/").slice(-2).join("/"), element: <ResetPasswordPage /> }
     ]
   },
   {
     path: "/",
     element: <MainLayout />,
     children: [
-      { path: "home", element: <ProtectedRoute><HomePage /></ProtectedRoute> },
-      { path: "explore", element: <ProtectedRoute><ExplorePage /></ProtectedRoute> },
-      { path: "asset/:assetId", element: <ProtectedRoute><AssetDetailsPage /></ProtectedRoute> },
-      { path: "profile/me", element: <ProtectedRoute><MyProfilePage /></ProtectedRoute> },
-      { path: "profile/:userId", element: <ProtectedRoute><PublicProfilePage /></ProtectedRoute> },
-      { path: "settings", element: <ProtectedRoute><SettingsPage /></ProtectedRoute> },
-      { path: "my-library", element: <ProtectedRoute><LibraryPage /></ProtectedRoute> },
-      { path: "my-assets", element: <ProtectedRoute><MyAssetsPage /></ProtectedRoute> },
-      { path: "notifications", element: <ProtectedRoute><NotificationsPage /></ProtectedRoute> }
+      { index: true, element: <Navigate to={ROUTES.HOME} replace /> },
+      { path: toChildPath(ROUTES.HOME), element: <ProtectedRoute><HomePage /></ProtectedRoute> },
+      { path: toChildPath(ROUTES.EXPLORE), element: <ProtectedRoute><ExplorePage /></ProtectedRoute> },
+      { path: toChildPath(ROUTES.ASSET(":assetId")), element: <ProtectedRoute><AssetDetailsPage /></ProtectedRoute> },
+      { path: toChildPath(ROUTES.PROFILE_ME), element: <ProtectedRoute><MyProfilePage /></ProtectedRoute> },
+      { path: toChildPath(ROUTES.PROFILE(":userId")), element: <ProtectedRoute><PublicProfilePage /></ProtectedRoute> },
+      { path: toChildPath(ROUTES.SETTINGS), element: <ProtectedRoute><SettingsPage /></ProtectedRoute> },
+      { path: toChildPath(ROUTES.MY_LIBRARY), element: <ProtectedRoute><LibraryPage /></ProtectedRoute> },
+      { path: toChildPath(ROUTES.MY_ASSETS), element: <ProtectedRoute><MyAssetsPage /></ProtectedRoute> },
+      { path: toChildPath(ROUTES.MY_ASSETS_CREATE), element: <ProtectedRoute><CreateAssetPage /></ProtectedRoute> },
+      { path: toChildPath(ROUTES.NOTIFICATIONS), element: <ProtectedRoute><NotificationsPage /></ProtectedRoute> }
     ]
   },
   {
-    path: "/admin",
+    path: toChildPath(ROUTES.ADMIN.USERS).split("/").slice(0, -1).join("/"),
     element: <AdminRoute><AdminLayout /></AdminRoute>,
     children: [
-      { path: "users", element: <AdminUsersPage /> },
-      { path: "assets", element: <AdminAssetsPage /> },
-      { path: "comments", element: <AdminCommentsPage /> },
-      { path: "reports", element: <AdminReportsPage /> }
+      { path: toChildPath(ROUTES.ADMIN.USERS).split("/").at(-1), element: <AdminUsersPage /> },
+      { path: toChildPath(ROUTES.ADMIN.ASSETS).split("/").at(-1), element: <AdminAssetsPage /> },
+      { path: toChildPath(ROUTES.ADMIN.COMMENTS).split("/").at(-1), element: <AdminCommentsPage /> },
+      { path: toChildPath(ROUTES.ADMIN.REPORTS).split("/").at(-1), element: <AdminReportsPage /> }
     ]
   },
-  { path: "/unauthorized", element: <UnauthorizedPage /> },
-  { path: "/error", element: <ErrorPage /> },
+  { path: ROUTES.UNAUTHORIZED, element: <UnauthorizedPage /> },
+  { path: ROUTES.ERROR, element: <ErrorPage /> },
   { path: "*", element: <NotFoundPage /> }
 ]);
 

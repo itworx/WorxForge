@@ -1,5 +1,5 @@
 {
-  "runtime": "Net80",
+  "runtime": "Net100",
   "defaultVariables": null,
   "documentGenerator": {
     "fromDocument": {
@@ -29,7 +29,7 @@
       "operationGenerationMode": "MultipleClientsFromOperationId",
       "markOptionalProperties": true,
       "typeStyle": "Interface",
-      "enumStyle": "Enum",
+      "enumStyle": "StringLiteral",
       "generateDefaultValues": true,
       "importRequiredTypes": true,
       "useAbortSignal": true,

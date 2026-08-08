@@ -14,6 +14,7 @@
   SETTINGS: "/settings",
   MY_LIBRARY: "/my-library",
   MY_ASSETS: "/my-assets",
+  MY_ASSETS_CREATE: "/my-assets/create",
   NOTIFICATIONS: "/notifications",
   ADMIN: {
     USERS: "/admin/users",
