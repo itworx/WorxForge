@@ -4,6 +4,7 @@ using WorxForge.Domain.Commands.Assets;
 using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Dtos.Common;
 using WorxForge.Domain.Entities;
+using WorxForge.Domain.Errors;
 using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Queries.Explore;
 
@@ -20,7 +21,7 @@ public sealed class AssetService(
     public async Task<AssetDetailsDto> GetAssetAsync(Guid assetId, Guid requestingUserId, CancellationToken cancellationToken)
     {
         var details = await assetRepository.GetDetailsAsync(assetId, requestingUserId, cancellationToken);
-        return details ?? throw new KeyNotFoundException($"Asset '{assetId}' was not found.");
+        return details ?? throw new NotFoundException($"Asset '{assetId}' was not found.", ErrorCodes.Asset.NotFound);
     }
 
     public async Task<AssetDetailsDto> GetMyAssetAsync(Guid assetId, Guid ownerId, CancellationToken cancellationToken)
@@ -28,7 +29,7 @@ public sealed class AssetService(
         var details = await GetAssetAsync(assetId, ownerId, cancellationToken);
         if (details.AuthorId != ownerId)
         {
-            throw new UnauthorizedAccessException("You are not allowed to access this asset as owner.");
+            throw new ForbiddenException("You are not allowed to access this asset as owner.");
         }
 
         return details;
@@ -39,7 +40,7 @@ public sealed class AssetService(
     public async Task UpdateAsync(UpdateAssetCommand command, CancellationToken cancellationToken)
     {
         var asset = await assetRepository.GetByIdTrackedAsync(command.AssetId, cancellationToken)
-            ?? throw new NotFoundException($"Asset '{command.AssetId}' was not found.");
+            ?? throw new NotFoundException($"Asset '{command.AssetId}' was not found.", ErrorCodes.Asset.NotFound);
 
         EnsureOwnership(asset.AuthorId, command.RequestingUserId);
 
@@ -76,7 +77,7 @@ public sealed class AssetService(
     public async Task DeleteAsync(Guid assetId, Guid requestingUserId, CancellationToken cancellationToken)
     {
         var asset = await assetRepository.GetByIdTrackedAsync(assetId, cancellationToken)
-            ?? throw new NotFoundException($"Asset '{assetId}' was not found.");
+            ?? throw new NotFoundException($"Asset '{assetId}' was not found.", ErrorCodes.Asset.NotFound);
 
         EnsureOwnership(asset.AuthorId, requestingUserId);
 
@@ -117,13 +118,13 @@ public sealed class AssetService(
     private async Task EnsureLookupsExistAsync(Guid assetTypeId, Guid domainId, Guid useCaseId, CancellationToken cancellationToken)
     {
         if (await assetTypeRepository.GetByIdAsync(assetTypeId, cancellationToken) is null)
-            throw new NotFoundException($"Asset type '{assetTypeId}' was not found.");
+            throw new NotFoundException($"Asset type '{assetTypeId}' was not found.", ErrorCodes.AssetType.NotFound);
 
         if (await businessDomainRepository.GetByIdAsync(domainId, cancellationToken) is null)
-            throw new NotFoundException($"Domain '{domainId}' was not found.");
+            throw new NotFoundException($"Domain '{domainId}' was not found.", ErrorCodes.Domain.NotFound);
 
         if (await useCaseRepository.GetByIdAsync(useCaseId, cancellationToken) is null)
-            throw new NotFoundException($"Use case '{useCaseId}' was not found.");
+            throw new NotFoundException($"Use case '{useCaseId}' was not found.", ErrorCodes.UseCase.NotFound);
     }
 
     private async Task EnsureToolsExistAsync(IEnumerable<Guid> toolIds, CancellationToken cancellationToken)
@@ -131,7 +132,7 @@ public sealed class AssetService(
         foreach (var toolId in toolIds)
         {
             if (await toolRepository.GetByIdAsync(toolId, cancellationToken) is null)
-                throw new NotFoundException($"Tool '{toolId}' was not found.");
+                throw new NotFoundException($"Tool '{toolId}' was not found.", ErrorCodes.Tool.NotFound);
         }
     }
 

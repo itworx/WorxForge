@@ -5,7 +5,6 @@ using WorxForge.Domain.Commands.Notifications;
 using WorxForge.Domain.Constants;
 using WorxForge.Domain.Dtos.Common;
 using WorxForge.Domain.Dtos.Notifications;
-using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Queries.Notifications;
 
 namespace WorxForge.API.EndpointGroups;
@@ -43,16 +42,9 @@ public static class NotificationsEndpointGroup
             PageSize = filters.PageSize ?? 20
         };
 
-        try
-        {
-            await validator.ValidateAsync(query, cancellationToken);
-            var result = await handler.HandleAsync(query, cancellationToken);
-            return Results.Ok(result);
-        }
-        catch (RequestValidationException validationException)
-        {
-            return Results.ValidationProblem(validationException.Errors);
-        }
+        await validator.ValidateAsync(query, cancellationToken);
+        var result = await handler.HandleAsync(query, cancellationToken);
+        return Results.Ok(result);
     }
 
     private static async Task<IResult> GetUnreadNotificationCountAsync(
@@ -68,16 +60,9 @@ public static class NotificationsEndpointGroup
 
         var query = new GetUnreadNotificationCountQuery { UserId = userId };
 
-        try
-        {
-            await validator.ValidateAsync(query, cancellationToken);
-            var result = await handler.HandleAsync(query, cancellationToken);
-            return Results.Ok(result);
-        }
-        catch (RequestValidationException validationException)
-        {
-            return Results.ValidationProblem(validationException.Errors);
-        }
+        await validator.ValidateAsync(query, cancellationToken);
+        var result = await handler.HandleAsync(query, cancellationToken);
+        return Results.Ok(result);
     }
 
     private static async Task<IResult> MarkNotificationAsReadAsync(
@@ -98,16 +83,9 @@ public static class NotificationsEndpointGroup
             NotificationId = notificationId
         };
 
-        try
-        {
-            await validator.ValidateAsync(command, cancellationToken);
-            await handler.HandleAsync(command, cancellationToken);
-            return Results.NoContent();
-        }
-        catch (RequestValidationException validationException)
-        {
-            return Results.ValidationProblem(validationException.Errors);
-        }
+        await validator.ValidateAsync(command, cancellationToken);
+        await handler.HandleAsync(command, cancellationToken);
+        return Results.NoContent();
     }
 
     private static async Task<IResult> MarkAllNotificationsAsReadAsync(
@@ -123,15 +101,8 @@ public static class NotificationsEndpointGroup
 
         var command = new MarkAllNotificationsAsReadCommand { UserId = userId };
 
-        try
-        {
-            await validator.ValidateAsync(command, cancellationToken);
-            await handler.HandleAsync(command, cancellationToken);
-            return Results.NoContent();
-        }
-        catch (RequestValidationException validationException)
-        {
-            return Results.ValidationProblem(validationException.Errors);
-        }
+        await validator.ValidateAsync(command, cancellationToken);
+        await handler.HandleAsync(command, cancellationToken);
+        return Results.NoContent();
     }
 }
