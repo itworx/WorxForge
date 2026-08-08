@@ -42,6 +42,7 @@ export const appRouter = createBrowserRouter([
     path: "/",
     element: <MainLayout />,
     children: [
+      { index: true, element: <HomePage /> },
       { path: "home", element: <ProtectedRoute><HomePage /></ProtectedRoute> },
       { path: "explore", element: <ProtectedRoute><ExplorePage /></ProtectedRoute> },
       { path: "asset/:assetId", element: <ProtectedRoute><AssetDetailsPage /></ProtectedRoute> },
