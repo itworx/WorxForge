@@ -54,6 +54,42 @@ step "Building backend solution..."
 dotnet build "$SOLUTION_FILE" --no-restore --configuration Debug
 ok "Backend build succeeded."
 
+# Check user-secrets
+echo ""
+step "Checking required user-secrets..."
+
+API_PROJECT="$SCRIPT_DIR/src/WorxForge.API"
+REQUIRED_SECRETS=(
+    "JwtAccessToken:Issuer"
+    "JwtAccessToken:Audience"
+    "JwtAccessToken:SigningKey"
+    "JwtAccessToken:ExpirationMinutes"
+    "ConnectionStrings:Default"
+    "Authentication:Google:ClientId"
+    "Cors:AllowedOrigins:0"
+)
+
+SECRETS_LIST=$(dotnet user-secrets list --project "$API_PROJECT" 2>/dev/null || true)
+MISSING_SECRETS=()
+
+for secret in "${REQUIRED_SECRETS[@]}"; do
+    if ! grep -qF "$secret" <<< "$SECRETS_LIST"; then
+        MISSING_SECRETS+=("$secret")
+    fi
+done
+
+if [[ ${#MISSING_SECRETS[@]} -gt 0 ]]; then
+    echo ""
+    echo -e "\033[0;33m  [WARN] The following user-secrets are not set:\033[0m"
+    for s in "${MISSING_SECRETS[@]}"; do
+        echo -e "\033[0;33m         dotnet user-secrets set \"$s\" \"<value>\" --project src/WorxForge.API\033[0m"
+    done
+    echo ""
+    echo -e "\033[0;33m  See README.md \"Local development configuration\" for required values.\033[0m"
+else
+    ok "All required user-secrets are present."
+fi
+
 echo ""
 echo -e "${GREEN}  Backend setup complete.${RESET}"
 echo ""

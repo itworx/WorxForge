@@ -72,6 +72,7 @@ The setup scripts:
 - restore local .NET tools
 - restore centrally managed NuGet packages
 - build the solution
+- warn about any missing required user-secrets (see below)
 
 ## Local development configuration
 
@@ -89,9 +90,12 @@ dotnet user-secrets set --project .\src\WorxForge.API\WorxForge.API.csproj "JwtA
 dotnet user-secrets set --project .\src\WorxForge.API\WorxForge.API.csproj "JwtAccessToken:SigningKey" "<your-dev-signing-key>"
 dotnet user-secrets set --project .\src\WorxForge.API\WorxForge.API.csproj "developmentGoogleSubject" "dev-debug-google-subject-yourname"
 dotnet user-secrets set --project .\src\WorxForge.API\WorxForge.API.csproj "developmentEmail" "your.name@itworx.com"
+dotnet user-secrets set --project .\src\WorxForge.API\WorxForge.API.csproj "Cors:AllowedOrigins:0" "http://localhost:5173"
 ```
 
 These two development keys are used by the `/api/authentication/debug-login` and `/api/authentication/debug-login-helper` endpoints to create or resolve your local test user.
+
+`Cors:AllowedOrigins` lists the frontend origin(s) allowed to call the API from the browser (no trailing slash). The API fails to start if this is missing or empty — set it to wherever your frontend dev server runs (e.g. `http://localhost:5173` for the default Vite React app).
 
 ### Verify secrets
 
