@@ -21,7 +21,7 @@ public sealed class AssetService(
     public async Task<AssetDetailsDto> GetAssetAsync(Guid assetId, Guid requestingUserId, CancellationToken cancellationToken)
     {
         var details = await assetRepository.GetDetailsAsync(assetId, requestingUserId, cancellationToken);
-        return details ?? throw new NotFoundException($"Asset '{assetId}' was not found.", ErrorCodes.Asset.NotFound);
+        return details ?? throw new NotFoundException(Errors.AssetNotFound);
     }
 
     public async Task<AssetDetailsDto> GetMyAssetAsync(Guid assetId, Guid ownerId, CancellationToken cancellationToken)
@@ -29,7 +29,7 @@ public sealed class AssetService(
         var details = await GetAssetAsync(assetId, ownerId, cancellationToken);
         if (details.AuthorId != ownerId)
         {
-            throw new ForbiddenException("You are not allowed to access this asset as owner.");
+            throw new ForbiddenException(Errors.AssetForbidden);
         }
 
         return details;
@@ -40,7 +40,7 @@ public sealed class AssetService(
     public async Task UpdateAsync(UpdateAssetCommand command, CancellationToken cancellationToken)
     {
         var asset = await assetRepository.GetByIdTrackedAsync(command.AssetId, cancellationToken)
-            ?? throw new NotFoundException($"Asset '{command.AssetId}' was not found.", ErrorCodes.Asset.NotFound);
+            ?? throw new NotFoundException(Errors.AssetNotFound);
 
         EnsureOwnership(asset.AuthorId, command.RequestingUserId);
 
@@ -77,7 +77,7 @@ public sealed class AssetService(
     public async Task DeleteAsync(Guid assetId, Guid requestingUserId, CancellationToken cancellationToken)
     {
         var asset = await assetRepository.GetByIdTrackedAsync(assetId, cancellationToken)
-            ?? throw new NotFoundException($"Asset '{assetId}' was not found.", ErrorCodes.Asset.NotFound);
+            ?? throw new NotFoundException(Errors.AssetNotFound);
 
         EnsureOwnership(asset.AuthorId, requestingUserId);
 
@@ -118,13 +118,13 @@ public sealed class AssetService(
     private async Task EnsureLookupsExistAsync(Guid assetTypeId, Guid domainId, Guid useCaseId, CancellationToken cancellationToken)
     {
         if (await assetTypeRepository.GetByIdAsync(assetTypeId, cancellationToken) is null)
-            throw new NotFoundException($"Asset type '{assetTypeId}' was not found.", ErrorCodes.AssetType.NotFound);
+            throw new NotFoundException(Errors.AssetTypeNotFound);
 
         if (await businessDomainRepository.GetByIdAsync(domainId, cancellationToken) is null)
-            throw new NotFoundException($"Domain '{domainId}' was not found.", ErrorCodes.Domain.NotFound);
+            throw new NotFoundException(Errors.DomainNotFound);
 
         if (await useCaseRepository.GetByIdAsync(useCaseId, cancellationToken) is null)
-            throw new NotFoundException($"Use case '{useCaseId}' was not found.", ErrorCodes.UseCase.NotFound);
+            throw new NotFoundException(Errors.UseCaseNotFound);
     }
 
     private async Task EnsureToolsExistAsync(IEnumerable<Guid> toolIds, CancellationToken cancellationToken)
@@ -132,14 +132,14 @@ public sealed class AssetService(
         foreach (var toolId in toolIds)
         {
             if (await toolRepository.GetByIdAsync(toolId, cancellationToken) is null)
-                throw new NotFoundException($"Tool '{toolId}' was not found.", ErrorCodes.Tool.NotFound);
+                throw new NotFoundException(Errors.ToolNotFound);
         }
     }
 
     private static void EnsureOwnership(Guid authorId, Guid requestingUserId)
     {
         if (authorId != requestingUserId)
-            throw new ForbiddenException("You are not allowed to modify this asset.");
+            throw new ForbiddenException(Errors.AssetForbidden);
     }
 
     private async Task<List<Guid>> ResolveTagIdsAsync(IReadOnlyList<string> tags, CancellationToken cancellationToken)

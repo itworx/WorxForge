@@ -22,16 +22,16 @@ public class WorxForgeException : Exception
         Type = ErrorType.Unexpected;
     }
 
-    protected WorxForgeException(string code, string? message, ErrorType type) : base(message)
+    protected WorxForgeException(Error error) : base(error.Message)
     {
-        Code = code;
-        Type = type;
+        Code = error.Code;
+        Type = error.Type;
     }
 
-    protected WorxForgeException(string code, string? message, ErrorType type, Exception? innerException) : base(message, innerException)
+    protected WorxForgeException(Error error, Exception? innerException) : base(error.Message, innerException)
     {
-        Code = code;
-        Type = type;
+        Code = error.Code;
+        Type = error.Type;
     }
 
     /// <summary>Stable, machine-readable error code (e.g. "User.NotFound"), never an HTTP status code.</summary>
