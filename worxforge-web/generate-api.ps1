@@ -1,5 +1,7 @@
-$apiProject = "..\..\..\..\back\WorxForge-BE\src\WorxForge.API\WorxForge.API.csproj"
+$scriptRoot = $PSScriptRoot
+$apiProject = Join-Path $scriptRoot "..\..\..\..\back\WorxForge-BE\src\WorxForge.API\WorxForge.API.csproj"
 $swaggerUrl  = "http://localhost:5222/swagger/v1/swagger.json"
+$nswagConfig = Join-Path $scriptRoot "nswag.json"
 
 Write-Host "Starting API..." -ForegroundColor Cyan
 $api = Start-Process dotnet -ArgumentList "run --project `"$apiProject`"" -PassThru -WindowStyle Hidden
@@ -19,7 +21,12 @@ try {
     if (-not $ready) { throw "API did not start in time." }
 
     Write-Host "Generating client..." -ForegroundColor Cyan
-    nswag run nswag.json /runtime:Net80
+    Push-Location $scriptRoot
+    try {
+        nswag run $nswagConfig
+    } finally {
+        Pop-Location
+    }
     Write-Host "Done. Client written to src/api/worxforgeClient.ts" -ForegroundColor Green
 } finally {
     Stop-Process -Id $api.Id -Force -ErrorAction SilentlyContinue
