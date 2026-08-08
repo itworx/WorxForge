@@ -17,6 +17,9 @@ public static class ApplicationBuilderExtensions
         }
 
         app.UseMiddleware<ExceptionMiddleware>();
+        // Enforce TLS so the SignalR "access_token" query string (see
+        // AuthenticationConfigurationExtensions.OnMessageReceived) is never sent in cleartext.
+        app.UseHttpsRedirection();
         app.UseAuthentication();
         app.UseAuthorization();
         return app;
