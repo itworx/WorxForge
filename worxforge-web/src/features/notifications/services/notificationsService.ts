@@ -1,7 +1,6 @@
 ﻿import { Client } from "../../../api/worxforgeClient";
 import type { NotificationDto } from "../../../api/worxforgeClient";
 import { createDevAuthenticatedFetch } from "../../../api/httpClient";
-import { getCurrentUserId } from "../../../services/tokenService";
 import type { GetNotificationsParams, Notification, NotificationList } from "../models/notifications.models";
 import { NotificationType } from "../models/notifications.models";
 
@@ -23,14 +22,6 @@ function toNotification(dto: NotificationDto): Notification {
   };
 }
 
-function requireCurrentUserId(): string {
-  const userId = getCurrentUserId();
-  if (!userId) {
-    throw new Error("Cannot call the notifications API without an authenticated user.");
-  }
-  return userId;
-}
-
 export interface NotificationsService {
   getNotifications(params: GetNotificationsParams, signal?: AbortSignal): Promise<NotificationList>;
   getUnreadCount(signal?: AbortSignal): Promise<number>;
@@ -43,8 +34,7 @@ export function createNotificationsService(baseUrl: string = import.meta.env.VIT
 
   return {
     async getNotifications({ isRead, page, pageSize }, signal) {
-      const userId = requireCurrentUserId();
-      const result = await client.notifications(userId, isRead, page, pageSize, signal);
+      const result = await client.notifications(isRead, page, pageSize, signal);
 
       return {
         items: (result.items ?? []).map(toNotification),
@@ -56,8 +46,7 @@ export function createNotificationsService(baseUrl: string = import.meta.env.VIT
     },
 
     async getUnreadCount(signal) {
-      const userId = requireCurrentUserId();
-      const result = await client.unreadCount(userId, signal);
+      const result = await client.unreadCount(signal);
       return result.count ?? 0;
     },
 

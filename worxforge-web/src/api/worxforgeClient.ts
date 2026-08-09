@@ -58,7 +58,7 @@ export interface IClient {
     /**
      * @return OK
      */
-    reportsPUT(body: ResolveReportByAdminCommand, signal?: AbortSignal): Promise<void>;
+    reportsPUT(reportId: string, body: ResolveReportByAdminRequest, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
@@ -179,6 +179,11 @@ export interface IClient {
     /**
      * @return OK
      */
+    report(assetId: string, body: ReportRequest, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @return OK
+     */
     login(body: LoginUserCommand, signal?: AbortSignal): Promise<void>;
 
     /**
@@ -263,12 +268,12 @@ export interface IClient {
      * @param pageSize (optional) 
      * @return OK
      */
-    notifications(userId: string, isRead: boolean | undefined, page: number, pageSize: number, signal?: AbortSignal): Promise<NotificationDtoPagedResultDto>;
+    notifications(isRead: boolean | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<NotificationDtoPagedResultDto>;
 
     /**
      * @return OK
      */
-    unreadCount(userId: string, signal?: AbortSignal): Promise<UnreadCountDto>;
+    unreadCount(signal?: AbortSignal): Promise<UnreadCountDto>;
 
     /**
      * @return OK
@@ -686,8 +691,11 @@ export class Client implements IClient {
     /**
      * @return OK
      */
-    reportsPUT(body: ResolveReportByAdminCommand, signal?: AbortSignal): Promise<void> {
+    reportsPUT(reportId: string, body: ResolveReportByAdminRequest, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/admin/reports/{reportId}";
+        if (reportId === undefined || reportId === null)
+            throw new globalThis.Error("The parameter 'reportId' must be defined.");
+        url_ = url_.replace("{reportId}", encodeURIComponent("" + reportId));
         url_ = url_.replace(/[?&]$/, "");
 
         const content_ = JSON.stringify(body);
@@ -1029,6 +1037,7 @@ export class Client implements IClient {
             method: "GET",
             signal,
             headers: {
+                "Accept": "application/json"
             }
         };
 
@@ -1045,10 +1054,6 @@ export class Client implements IClient {
             let result200: any = null;
             result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AssetDetailsDto;
             return result200;
-            });
-        } else if (status === 404) {
-            return response.text().then((_responseText) => {
-            return throwException("Not Found", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -1596,6 +1601,47 @@ export class Client implements IClient {
     /**
      * @return OK
      */
+    report(assetId: string, body: ReportRequest, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/assets/{assetId}/report";
+        if (assetId === undefined || assetId === null)
+            throw new globalThis.Error("The parameter 'assetId' must be defined.");
+        url_ = url_.replace("{assetId}", encodeURIComponent("" + assetId));
+        url_ = url_.replace(/[?&]$/, "");
+
+        const content_ = JSON.stringify(body);
+
+        let options_: RequestInit = {
+            body: content_,
+            method: "POST",
+            signal,
+            headers: {
+                "Content-Type": "application/json",
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processReport(_response);
+        });
+    }
+
+    protected processReport(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @return OK
+     */
     login(body: LoginUserCommand, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/authentication/login";
         url_ = url_.replace(/[?&]$/, "");
@@ -2109,10 +2155,6 @@ export class Client implements IClient {
             result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AssetSummaryDtoPagedResultDto;
             return result200;
             });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            return throwException("Unauthorized", status, _responseText, _headers);
-            });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -2168,12 +2210,8 @@ export class Client implements IClient {
      * @param pageSize (optional) 
      * @return OK
      */
-    notifications(userId: string, isRead: boolean | undefined, page: number, pageSize: number, signal?: AbortSignal): Promise<NotificationDtoPagedResultDto> {
+    notifications(isRead: boolean | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<NotificationDtoPagedResultDto> {
         let url_ = this.baseUrl + "/api/notifications?";
-        if (userId === undefined || userId === null)
-            throw new globalThis.Error("The parameter 'userId' must be defined and cannot be null.");
-        else
-            url_ += "UserId=" + encodeURIComponent("" + userId) + "&";
         if (isRead === null)
             throw new globalThis.Error("The parameter 'isRead' cannot be null.");
         else if (isRead !== undefined)
@@ -2210,10 +2248,6 @@ export class Client implements IClient {
             result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as NotificationDtoPagedResultDto;
             return result200;
             });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            return throwException("Unauthorized", status, _responseText, _headers);
-            });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -2225,12 +2259,8 @@ export class Client implements IClient {
     /**
      * @return OK
      */
-    unreadCount(userId: string, signal?: AbortSignal): Promise<UnreadCountDto> {
-        let url_ = this.baseUrl + "/api/notifications/unread-count?";
-        if (userId === undefined || userId === null)
-            throw new globalThis.Error("The parameter 'userId' must be defined and cannot be null.");
-        else
-            url_ += "UserId=" + encodeURIComponent("" + userId) + "&";
+    unreadCount(signal?: AbortSignal): Promise<UnreadCountDto> {
+        let url_ = this.baseUrl + "/api/notifications/unread-count";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -2253,10 +2283,6 @@ export class Client implements IClient {
             return response.text().then((_responseText) => {
             const parsed = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
             return typeof parsed === "number" ? { count: parsed } : (parsed as UnreadCountDto);
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            return throwException("Unauthorized", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
@@ -2759,15 +2785,6 @@ export interface LookupItemDto {
     name?: string | undefined;
 }
 
-export interface MarkAllNotificationsAsReadCommand {
-    userId?: string;
-}
-
-export interface MarkNotificationAsReadCommand {
-    userId?: string;
-    notificationId?: string;
-}
-
 export type NotificationDeliveryType = -1 | 0 | 1 | 2 | 3 | 4;
 
 export interface NotificationDto {
@@ -2792,7 +2809,6 @@ export interface UnreadCountDto {
     count?: number;
 }
 
-
 export interface PreviewAssetCommand {
     markdownContent?: string | undefined;
 }
@@ -2801,11 +2817,13 @@ export interface ReactToAssetRequest {
     reactionType?: string | undefined;
 }
 
+export interface ReportRequest {
+    reason?: string | undefined;
+}
+
 export type ReportStatus = 0 | 1 | 2 | 3;
 
-export interface ResolveReportByAdminCommand {
-    reportId?: string;
-    adminUserId?: string;
+export interface ResolveReportByAdminRequest {
     newStatus?: ReportStatus;
 }
 
