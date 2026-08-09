@@ -1,32 +1,6 @@
-import { ApiException, Client, type AssetDetailsDto, type CreateAssetRequest, type LookupItemDto, type UpdateAssetRequest } from "../../../api/worxforgeClient";
+import { ApiException, Client, type CreateAssetRequest, type LookupItemDto, type UpdateAssetRequest } from "../../../api/worxforgeClient";
 import { createDevAuthenticatedFetch } from "../../../api/httpClient";
 import type { AssetDetails, AssetSummary } from "../models/assets.models";
-
-function mapDtoToAssetDetails(dto: AssetDetailsDto): AssetDetails {
-  return {
-    assetId: dto.assetId ?? "",
-    title: dto.title ?? "",
-    description: dto.description,
-    assetTypeName: dto.assetTypeName ?? "",
-    domainName: dto.domainName ?? "",
-    tools: dto.tools ?? [],
-    authorDisplayName: dto.authorDisplayName ?? "",
-    createdAt: dto.createdAt ?? "",
-    updatedAt: dto.updatedAt ?? "",
-    reactionCount: dto.reactionCount ?? 0,
-    dislikeCount: dto.dislikeCount ?? 0,
-    commentCount: dto.commentCount ?? 0,
-    isBookmarked: dto.isBookmarked ?? false,
-    markdownContent: dto.markdownContent ?? "",
-    useCaseName: dto.useCaseName ?? "",
-    compatibleTools: dto.compatibleTools ?? [],
-    version: dto.version,
-    authorId: dto.authorId ?? "",
-    authorAvatarUrl: dto.authorAvatarUrl,
-    viewCount: dto.viewCount ?? 0,
-    isFollowing: dto.isFollowing ?? false
-  };
-}
 
 export interface LookupItem {
   id: string;
@@ -86,6 +60,40 @@ class AssetRequestError extends Error {
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null;
+}
+
+function toNumberValue(value: unknown): number {
+  return typeof value === "number" ? value : 0;
+}
+
+function toBooleanValue(value: unknown): boolean {
+  return typeof value === "boolean" ? value : false;
+}
+
+function mapRecordToAssetDetails(source: UnknownRecord): AssetDetails {
+  return {
+    assetId: toStringValue(source.assetId),
+    title: toStringValue(source.title),
+    description: toStringValue(source.description),
+    assetTypeName: toStringValue(source.assetTypeName),
+    domainName: toStringValue(source.domainName),
+    tools: toStringArray(source.tools),
+    authorDisplayName: toStringValue(source.authorDisplayName),
+    createdAt: toStringValue(source.createdAt),
+    updatedAt: toStringValue(source.updatedAt),
+    reactionCount: toNumberValue(source.reactionCount),
+    dislikeCount: toNumberValue(source.dislikeCount),
+    commentCount: toNumberValue(source.commentCount),
+    isBookmarked: toBooleanValue(source.isBookmarked),
+    markdownContent: toStringValue(source.markdownContent),
+    useCaseName: toStringValue(source.useCaseName),
+    compatibleTools: toStringArray(source.compatibleTools),
+    version: toStringValue(source.version),
+    authorId: toStringValue(source.authorId),
+    authorAvatarUrl: toStringValue(source.authorAvatarUrl) || undefined,
+    viewCount: toNumberValue(source.viewCount),
+    isFollowing: toBooleanValue(source.isFollowing)
+  };
 }
 
 function toLookupItem(dto: LookupItemDto): LookupItem {
@@ -278,8 +286,16 @@ export function createAssetsService(baseUrl: string = import.meta.env.VITE_API_B
 
   return {
     async getAssetDetails(assetId, signal) {
-      const dto = await client.assetsGET2(assetId, signal);
-      return mapDtoToAssetDetails(dto);
+      const payload = await fetchJson<unknown>(`${normalizedBaseUrl}/api/assets/${encodeURIComponent(assetId)}`, {
+        method: "GET",
+        signal
+      });
+
+      if (!isRecord(payload)) {
+        throw new AssetRequestError("The API returned an invalid asset response.");
+      }
+
+      return mapRecordToAssetDetails(payload);
     },
 
     async getEditorLookups(signal) {

@@ -5,10 +5,6 @@ import { AuthLayout } from "../layouts/AuthLayout";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { AdminRoute } from "./AdminRoute";
 import { LoginPage } from "../features/authentication/pages/LoginPage";
-import { RegisterPage } from "../features/authentication/pages/RegisterPage";
-import { VerifyEmailPage } from "../features/authentication/pages/VerifyEmailPage";
-import { ForgotPasswordPage } from "../features/authentication/pages/ForgotPasswordPage";
-import { ResetPasswordPage } from "../features/authentication/pages/ResetPasswordPage";
 import { HomePage } from "../features/home/pages/HomePage";
 import { ExplorePage } from "../features/explore/pages/ExplorePage";
 import { AssetDetailsPage } from "../features/assets/pages/AssetDetailsPage";
@@ -37,10 +33,10 @@ export const appRouter = createBrowserRouter([
     element: <AuthLayout />,
     children: [
       { path: toChildPath(ROUTES.AUTH.LOGIN).split("/").at(-1), element: <LoginPage /> },
-      { path: toChildPath(ROUTES.AUTH.REGISTER).split("/").at(-1), element: <RegisterPage /> },
-      { path: toChildPath(ROUTES.AUTH.VERIFY_EMAIL).split("/").at(-1), element: <VerifyEmailPage /> },
-      { path: toChildPath(ROUTES.AUTH.FORGOT_PASSWORD).split("/").at(-1), element: <ForgotPasswordPage /> },
-      { path: toChildPath(ROUTES.AUTH.RESET_PASSWORD(":token")).split("/").slice(-2).join("/"), element: <ResetPasswordPage /> }
+      { path: toChildPath(ROUTES.AUTH.REGISTER).split("/").at(-1), element: <Navigate to={ROUTES.AUTH.LOGIN} replace /> },
+      { path: toChildPath(ROUTES.AUTH.VERIFY_EMAIL).split("/").at(-1), element: <Navigate to={ROUTES.AUTH.LOGIN} replace /> },
+      { path: toChildPath(ROUTES.AUTH.FORGOT_PASSWORD).split("/").at(-1), element: <Navigate to={ROUTES.AUTH.LOGIN} replace /> },
+      { path: toChildPath(ROUTES.AUTH.RESET_PASSWORD(":token")).split("/").slice(-2).join("/"), element: <Navigate to={ROUTES.AUTH.LOGIN} replace /> }
     ]
   },
   {

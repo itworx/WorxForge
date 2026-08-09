@@ -1,5 +1,7 @@
-﻿export function useAuthentication(): void {
-  // TODO: Implementation
+﻿import { useAuthContext } from "../../../contexts/AuthContext";
+
+export function useAuthentication() {
+  return useAuthContext();
 }
 
 
