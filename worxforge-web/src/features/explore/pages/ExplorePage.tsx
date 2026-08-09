@@ -2,6 +2,7 @@
 import { useSearchParams } from "react-router-dom";
 import { SlidersHorizontal } from "lucide-react";
 import { SearchBar } from "../../../components/SearchBar";
+import { Pagination } from "../../../components/Pagination";
 import { AssetsDashboard } from "../../assets/components/AssetsDashboard";
 import { useExploreFilters, useExploreAssets } from "../hooks/useExplore";
 import { ExploreFiltersBar, type ExploreFilterValues } from "../components/ExploreFiltersBar";
@@ -101,29 +102,13 @@ export function ExplorePage() {
         <AssetsDashboard assets={data?.items ?? []} className={isFetching ? "opacity-60" : undefined} />
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-2">
-          <button
-            type="button"
-            disabled={page <= 1}
-            onClick={() => setPage((previous) => previous - 1)}
-            className="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span className="text-xs text-muted-foreground">
-            Page {page} of {totalPages}
-          </span>
-          <button
-            type="button"
-            disabled={!data?.hasNextPage}
-            onClick={() => setPage((previous) => previous + 1)}
-            className="inline-flex h-8 items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        hasNextPage={data?.hasNextPage ?? false}
+        onPageChange={setPage}
+        className="pt-2"
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 ﻿import { CheckCheck, Loader2 } from "lucide-react";
 import { useNotifications } from "../hooks/useNotifications";
 import { NotificationListItem } from "../components/NotificationListItem";
+import { Pagination } from "../../../components/Pagination";
 
 export function NotificationsPage() {
   const {
@@ -74,29 +75,7 @@ export function NotificationsPage() {
       ) : null}
 
       {!isLoading && totalCount > 0 && (
-        <div className="flex flex-col items-center justify-between gap-3 text-sm text-muted-foreground sm:flex-row">
-          <span>
-            Page {page} of {totalPages}
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={page <= 1}
-              onClick={() => setPage(page - 1)}
-              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-text shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              disabled={!hasNextPage}
-              onClick={() => setPage(page + 1)}
-              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-text shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </div>
+        <Pagination page={page} totalPages={totalPages} hasNextPage={hasNextPage} onPageChange={setPage} />
       )}
     </div>
   );
