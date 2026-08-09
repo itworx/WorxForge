@@ -286,7 +286,7 @@ export function MainLayout() {
       <div className="flex min-h-screen">
         <div
           className={cn(
-            "relative hidden overflow-hidden lg:block motion-safe:transition-[width] motion-safe:ease-in-out motion-reduce:transition-none",
+            "relative hidden overflow-hidden lg:sticky lg:top-0 lg:block lg:h-screen motion-safe:transition-[width] motion-safe:ease-in-out motion-reduce:transition-none",
             isCollapsedToClosedLayout ? "motion-safe:duration-700" : "motion-safe:duration-300",
             isDesktopSidebarClosed
               ? "w-0"
