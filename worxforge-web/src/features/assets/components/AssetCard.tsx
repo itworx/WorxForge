@@ -11,9 +11,10 @@ interface AssetCardProps {
   asset: AssetSummary;
   onToggleBookmark?: (assetId: string, isBookmarked: boolean) => void;
   className?: string;
+  showOpenAssetAction?: boolean;
 }
 
-export function AssetCard({ asset, onToggleBookmark, className = "" }: AssetCardProps) {
+export function AssetCard({ asset, onToggleBookmark, className = "", showOpenAssetAction = true }: AssetCardProps) {
   const titleId = `asset-card-title-${asset.assetId}`;
 
   return (
@@ -52,12 +53,14 @@ export function AssetCard({ asset, onToggleBookmark, className = "" }: AssetCard
           <AssetCardStats reactionCount={asset.reactionCount} commentCount={asset.commentCount} />
         </div>
 
-        <Link
-          to={ROUTES.ASSET(asset.assetId)}
-          className="mt-3 inline-flex items-center justify-center rounded-lg border border-secondary/30 bg-gray-100 px-3 py-1.5 text-xs font-medium text-black transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
-          Open asset
-        </Link>
+        {showOpenAssetAction ? (
+          <Link
+            to={ROUTES.ASSET(asset.assetId)}
+            className="mt-3 inline-flex items-center justify-center rounded-lg border border-secondary/30 bg-gray-100 px-3 py-1.5 text-xs font-medium text-black transition-colors hover:bg-primary/10 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            Open asset
+          </Link>
+        ) : null}
       </div>
     </article>
   );

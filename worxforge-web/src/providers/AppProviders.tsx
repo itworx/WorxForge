@@ -25,7 +25,15 @@ export function AppProviders({ children }: PropsWithChildren) {
         <SessionProvider>
           <NotificationProvider>
             {children}
-            <Toaster richColors closeButton />
+            <Toaster
+              richColors
+              closeButton
+              toastOptions={{
+                classNames: {
+                  closeButton: "!left-auto !right-2"
+                }
+              }}
+            />
           </NotificationProvider>
         </SessionProvider>
       </AuthProvider>

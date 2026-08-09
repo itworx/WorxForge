@@ -15,6 +15,7 @@
   MY_LIBRARY: "/my-library",
   MY_ASSETS: "/my-assets",
   MY_ASSETS_CREATE: "/my-assets/create",
+  MY_ASSETS_EDIT: (assetId: string) => `/my-assets/${assetId}/edit`,
   NOTIFICATIONS: "/notifications",
   ADMIN: {
     USERS: "/admin/users",

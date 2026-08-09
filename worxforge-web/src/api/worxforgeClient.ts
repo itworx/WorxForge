@@ -159,12 +159,12 @@ export interface IClient {
     /**
      * @return OK
      */
-    bookmarkPOST(body: BookmarkAssetCommand, signal?: AbortSignal): Promise<void>;
+    bookmarkPOST(assetId: string, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
      */
-    bookmarkDELETE(body: RemoveBookmarkCommand, signal?: AbortSignal): Promise<void>;
+    bookmarkDELETE(assetId: string, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
@@ -259,24 +259,26 @@ export interface IClient {
 
     /**
      * @param isRead (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
      * @return OK
      */
-    notifications(userId: string, isRead: boolean | undefined, page: number, pageSize: number, signal?: AbortSignal): Promise<void>;
+    notifications(isRead: boolean | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
      */
-    unreadCount(userId: string, signal?: AbortSignal): Promise<void>;
+    unreadCount(signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
      */
-    read(body: MarkNotificationAsReadCommand, signal?: AbortSignal): Promise<void>;
+    read(notificationId: string, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
      */
-    readAll(body: MarkAllNotificationsAsReadCommand, signal?: AbortSignal): Promise<void>;
+    readAll(signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
@@ -292,6 +294,13 @@ export interface IClient {
      * @return OK
      */
     profile(userId: string, signal?: AbortSignal): Promise<void>;
+
+    /**
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    assetsGET3(userId: string, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
@@ -1429,18 +1438,17 @@ export class Client implements IClient {
     /**
      * @return OK
      */
-    bookmarkPOST(body: BookmarkAssetCommand, signal?: AbortSignal): Promise<void> {
+    bookmarkPOST(assetId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/assets/{assetId}/bookmark";
+        if (assetId === undefined || assetId === null)
+            throw new globalThis.Error("The parameter 'assetId' must be defined.");
+        url_ = url_.replace("{assetId}", encodeURIComponent("" + assetId));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
-
         let options_: RequestInit = {
-            body: content_,
             method: "POST",
             signal,
             headers: {
-                "Content-Type": "application/json",
             }
         };
 
@@ -1467,18 +1475,17 @@ export class Client implements IClient {
     /**
      * @return OK
      */
-    bookmarkDELETE(body: RemoveBookmarkCommand, signal?: AbortSignal): Promise<void> {
+    bookmarkDELETE(assetId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/assets/{assetId}/bookmark";
+        if (assetId === undefined || assetId === null)
+            throw new globalThis.Error("The parameter 'assetId' must be defined.");
+        url_ = url_.replace("{assetId}", encodeURIComponent("" + assetId));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
-
         let options_: RequestInit = {
-            body: content_,
             method: "DELETE",
             signal,
             headers: {
-                "Content-Type": "application/json",
             }
         };
 
@@ -2144,25 +2151,23 @@ export class Client implements IClient {
 
     /**
      * @param isRead (optional) 
+     * @param page (optional) 
+     * @param pageSize (optional) 
      * @return OK
      */
-    notifications(userId: string, isRead: boolean | undefined, page: number, pageSize: number, signal?: AbortSignal): Promise<void> {
+    notifications(isRead: boolean | undefined, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/notifications?";
-        if (userId === undefined || userId === null)
-            throw new globalThis.Error("The parameter 'userId' must be defined and cannot be null.");
-        else
-            url_ += "UserId=" + encodeURIComponent("" + userId) + "&";
         if (isRead === null)
             throw new globalThis.Error("The parameter 'isRead' cannot be null.");
         else if (isRead !== undefined)
             url_ += "IsRead=" + encodeURIComponent("" + isRead) + "&";
-        if (page === undefined || page === null)
-            throw new globalThis.Error("The parameter 'page' must be defined and cannot be null.");
-        else
+        if (page === null)
+            throw new globalThis.Error("The parameter 'page' cannot be null.");
+        else if (page !== undefined)
             url_ += "Page=" + encodeURIComponent("" + page) + "&";
-        if (pageSize === undefined || pageSize === null)
-            throw new globalThis.Error("The parameter 'pageSize' must be defined and cannot be null.");
-        else
+        if (pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' cannot be null.");
+        else if (pageSize !== undefined)
             url_ += "PageSize=" + encodeURIComponent("" + pageSize) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -2196,12 +2201,8 @@ export class Client implements IClient {
     /**
      * @return OK
      */
-    unreadCount(userId: string, signal?: AbortSignal): Promise<void> {
-        let url_ = this.baseUrl + "/api/notifications/unread-count?";
-        if (userId === undefined || userId === null)
-            throw new globalThis.Error("The parameter 'userId' must be defined and cannot be null.");
-        else
-            url_ += "UserId=" + encodeURIComponent("" + userId) + "&";
+    unreadCount(signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/notifications/unread-count";
         url_ = url_.replace(/[?&]$/, "");
 
         let options_: RequestInit = {
@@ -2234,18 +2235,17 @@ export class Client implements IClient {
     /**
      * @return OK
      */
-    read(body: MarkNotificationAsReadCommand, signal?: AbortSignal): Promise<void> {
+    read(notificationId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/notifications/{notificationId}/read";
+        if (notificationId === undefined || notificationId === null)
+            throw new globalThis.Error("The parameter 'notificationId' must be defined.");
+        url_ = url_.replace("{notificationId}", encodeURIComponent("" + notificationId));
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
-
         let options_: RequestInit = {
-            body: content_,
             method: "PUT",
             signal,
             headers: {
-                "Content-Type": "application/json",
             }
         };
 
@@ -2272,18 +2272,14 @@ export class Client implements IClient {
     /**
      * @return OK
      */
-    readAll(body: MarkAllNotificationsAsReadCommand, signal?: AbortSignal): Promise<void> {
+    readAll(signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/notifications/read-all";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(body);
-
         let options_: RequestInit = {
-            body: content_,
             method: "PUT",
             signal,
             headers: {
-                "Content-Type": "application/json",
             }
         };
 
@@ -2402,6 +2398,53 @@ export class Client implements IClient {
     }
 
     protected processProfile(response: Response): Promise<void> {
+        const status = response.status;
+        let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
+        if (status === 200) {
+            return response.text().then((_responseText) => {
+            return;
+            });
+        } else if (status !== 200 && status !== 204) {
+            return response.text().then((_responseText) => {
+            return throwException("An unexpected server error occurred.", status, _responseText, _headers);
+            });
+        }
+        return Promise.resolve<void>(null as any);
+    }
+
+    /**
+     * @param page (optional) 
+     * @param pageSize (optional) 
+     * @return OK
+     */
+    assetsGET3(userId: string, page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<void> {
+        let url_ = this.baseUrl + "/api/profile/{userId}/assets?";
+        if (userId === undefined || userId === null)
+            throw new globalThis.Error("The parameter 'userId' must be defined.");
+        url_ = url_.replace("{userId}", encodeURIComponent("" + userId));
+        if (page === null)
+            throw new globalThis.Error("The parameter 'page' cannot be null.");
+        else if (page !== undefined)
+            url_ += "page=" + encodeURIComponent("" + page) + "&";
+        if (pageSize === null)
+            throw new globalThis.Error("The parameter 'pageSize' cannot be null.");
+        else if (pageSize !== undefined)
+            url_ += "pageSize=" + encodeURIComponent("" + pageSize) + "&";
+        url_ = url_.replace(/[?&]$/, "");
+
+        let options_: RequestInit = {
+            method: "GET",
+            signal,
+            headers: {
+            }
+        };
+
+        return this.http.fetch(url_, options_).then((_response: Response) => {
+            return this.processAssetsGET3(_response);
+        });
+    }
+
+    protected processAssetsGET3(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -2594,11 +2637,6 @@ export interface AssetSummaryDtoPagedResultDto {
     readonly hasNextPage?: boolean;
 }
 
-export interface BookmarkAssetCommand {
-    userId?: string;
-    assetId?: string;
-}
-
 export interface ChangePasswordCommand {
     userId?: string;
     currentPassword?: string | undefined;
@@ -2675,26 +2713,12 @@ export interface LookupItemDto {
     name?: string | undefined;
 }
 
-export interface MarkAllNotificationsAsReadCommand {
-    userId?: string;
-}
-
-export interface MarkNotificationAsReadCommand {
-    userId?: string;
-    notificationId?: string;
-}
-
 export interface PreviewAssetCommand {
     markdownContent?: string | undefined;
 }
 
 export interface ReactToAssetRequest {
     reactionType?: string | undefined;
-}
-
-export interface RemoveBookmarkCommand {
-    userId?: string;
-    assetId?: string;
 }
 
 export type ReportStatus = 0 | 1 | 2 | 3;

@@ -131,6 +131,82 @@
   }
 }
 
+@keyframes wf-section-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes wf-page-reveal {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes wf-status-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(4px) scale(0.995);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes wf-control-select {
+  0% {
+    transform: scale(0.985);
+  }
+
+  65% {
+    transform: scale(1.012);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes wf-loading-pulse {
+  0%,
+  100% {
+    opacity: 0.58;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes wf-tag-chip-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(2px) scale(0.94);
+  }
+
+  70% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @keyframes wf-rainbow-shift {
   0% {
     background-position: 0 50%;
@@ -221,8 +297,38 @@
 }
 
 @layer components {
+  [data-sonner-toast] [data-close-button="true"] {
+    left: auto !important;
+    right: 10px !important;
+  }
+
   .wf-sidebar-item-enter {
     animation: wf-sidebar-reveal 420ms ease-out forwards;
+  }
+
+  .wf-page-enter {
+    animation: wf-page-reveal 160ms ease-out both;
+  }
+
+  .wf-section-enter {
+    animation: wf-section-reveal 260ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+    will-change: opacity, transform;
+  }
+
+  .wf-status-enter {
+    animation: wf-status-reveal 190ms ease-out both;
+  }
+
+  .wf-control-selected {
+    animation: wf-control-select 180ms ease-out both;
+  }
+
+  .wf-loading-pulse {
+    animation: wf-loading-pulse 1.4s ease-in-out infinite;
+  }
+
+  .wf-tag-chip-enter {
+    animation: wf-tag-chip-enter 200ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
   }
 
   .wf-brand-transfer-out {
@@ -290,6 +396,22 @@
 
 @media (prefers-reduced-motion: reduce) {
   .wf-sidebar-item-enter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .wf-page-enter,
+  .wf-section-enter {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .wf-status-enter,
+  .wf-control-selected,
+  .wf-loading-pulse,
+  .wf-tag-chip-enter {
     animation: none;
     opacity: 1;
     transform: none;

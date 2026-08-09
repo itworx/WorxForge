@@ -15,6 +15,7 @@ function renderLayout(initialPath: string) {
           <Route path={ROUTES.MY_LIBRARY.slice(1)} element={<div>Library page</div>} />
           <Route path={ROUTES.MY_ASSETS.slice(1)} element={<div>My assets page</div>} />
           <Route path={ROUTES.MY_ASSETS_CREATE.slice(1)} element={<div>Create asset page</div>} />
+          <Route path={ROUTES.MY_ASSETS_EDIT(":assetId").slice(1)} element={<div>Edit asset page</div>} />
           <Route path={ROUTES.NOTIFICATIONS.slice(1)} element={<div>Notifications page</div>} />
           <Route path={ROUTES.PROFILE_ME.slice(1)} element={<div>Profile page</div>} />
           <Route path={ROUTES.SETTINGS.slice(1)} element={<div>Settings page</div>} />
@@ -79,6 +80,21 @@ describe("MainLayout", () => {
 
     expect(await waitForSidebarToggle("Close sidebar")).not.toBeNull();
     expect(screen.getByRole("link", { name: "Home" }).getAttribute("aria-current")).toBe("page");
+  });
+
+  it("activates My Assets for the edit route without activating Publish Asset", async () => {
+    const user = userEvent.setup();
+
+    renderLayout(ROUTES.MY_ASSETS_EDIT("asset-42"));
+
+    await user.click(screen.getByRole("button", { name: "Open sidebar" }));
+    await waitForSidebarToggle("Collapse sidebar");
+
+    const publishAssetLink = screen.getByRole("link", { name: "Publish Asset" });
+    const myAssetsLink = screen.getByRole("link", { name: "My Assets" });
+
+    expect(publishAssetLink.getAttribute("aria-current")).toBeNull();
+    expect(myAssetsLink.getAttribute("aria-current")).toBe("page");
   });
 
   it("opens the mobile drawer, focuses the close control, and closes on navigation", async () => {

@@ -1,13 +1,37 @@
-﻿// TODO: Token storage strategy (httpOnly cookie vs localStorage) to be decided.
+﻿const ACCESS_TOKEN_STORAGE_KEY = "worxforge.access-token";
+
 export function getAccessToken(): string | null {
-  // TODO: Implementation
-  return null;
+  try {
+    const value = window.sessionStorage.getItem(ACCESS_TOKEN_STORAGE_KEY);
+    if (!value) {
+      return null;
+    }
+
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  } catch {
+    return null;
+  }
 }
 
-export function setAccessToken(_token: string): void {
-  // TODO: Implementation
+export function setAccessToken(token: string): void {
+  const trimmed = token.trim();
+  if (!trimmed) {
+    clearAccessToken();
+    return;
+  }
+
+  try {
+    window.sessionStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, trimmed);
+  } catch {
+    // Ignore storage failures in restricted browser contexts.
+  }
 }
 
 export function clearAccessToken(): void {
-  // TODO: Implementation
+  try {
+    window.sessionStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures in restricted browser contexts.
+  }
 }

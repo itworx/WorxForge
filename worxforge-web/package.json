@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run --passWithNoTests",
+    "test:publish:smoke": "node scripts/verify-publish.mjs",
     "test:watch": "vitest",
     "preview": "vite preview",
     "generate-api": "powershell -ExecutionPolicy Bypass -File generate-api.ps1"

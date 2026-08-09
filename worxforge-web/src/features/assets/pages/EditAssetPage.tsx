@@ -1,6 +1,7 @@
-﻿export function EditAssetPage() {
-  // TODO: Implementation
-  return <></>;
+﻿import { PublishAssetPage } from "./PublishAssetPage";
+
+export function EditAssetPage() {
+  return <PublishAssetPage />;
 }
 
 
