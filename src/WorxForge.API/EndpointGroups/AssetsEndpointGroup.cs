@@ -227,7 +227,7 @@ public static class AssetsEndpointGroup
             ToolId = filters.ToolId,
             Freshness = filters.Freshness,
             Page = filters.Page ?? 1,
-            PageSize = filters.PageSize ?? 12
+            PageSize = filters.PageSize ?? 20
         };
 
         var results = await handler.HandleAsync(query, cancellationToken);
