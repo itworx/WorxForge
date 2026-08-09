@@ -7,21 +7,26 @@ export interface LookupItem {
 }
 
 export interface ExploreFilters {
-  domains: LookupItem[];
   assetTypes: LookupItem[];
+  domains: LookupItem[];
   useCases: LookupItem[];
   tools: LookupItem[];
-  tags: string[];
 }
+
+/** Mirrors the API's `AssetFreshness` enum. */
+export type AssetFreshness = 0 | 1 | 2;
+
+/** Mirrors the API's `ExploreSortByConstants`. */
+export type ExploreSortBy = "relevance" | "helpful" | "added" | "updated" | "discussed";
 
 export interface AssetSearchRequest {
   keywords?: string;
-  domainIds?: string[];
-  assetTypeIds?: string[];
-  useCaseIds?: string[];
-  toolIds?: string[];
-  tags?: string[];
-  sortBy?: "relevance" | "recency" | "popularity";
+  assetTypeId?: string;
+  domainId?: string;
+  useCaseId?: string;
+  toolId?: string;
+  freshness?: AssetFreshness;
+  sortBy?: ExploreSortBy;
   page: number;
   pageSize: number;
 }
