@@ -416,14 +416,28 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
         return await SelectAssetSummaries(recentlyUpdatedAssets, userId).ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyList<AssetSummaryDto>> GetSavedAssetsAsync(Guid userId, CancellationToken cancellationToken)
+    public async Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> GetSavedAssetsAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken)
     {
         var savedAssets = dbContext.Bookmarks
             .AsNoTracking()
             .Where(bookmark => bookmark.UserId == userId)
             .Join(dbContext.Assets.AsNoTracking().Where(asset => asset.DeletedAt == null), bookmark => bookmark.AssetId, asset => asset.AssetId, (bookmark, asset) => asset);
 
-        return await SelectAssetSummaries(savedAssets, userId).ToListAsync(cancellationToken);
+        var total = await savedAssets.CountAsync(cancellationToken);
+        if (total == 0)
+        {
+            return ([], 0);
+        }
+
+        var skip = (page - 1) * pageSize;
+
+        var pagedAssets = savedAssets
+            .OrderByDescending(asset => asset.CreatedAt)
+            .Skip(skip)
+            .Take(pageSize);
+
+        var items = await SelectAssetSummaries(pagedAssets, userId).ToListAsync(cancellationToken);
+        return (items, total);
     }
 
     public async Task<IReadOnlyList<AssetSummaryDto>> GetRecommendedForYouAsync(Guid userId, int limit, CancellationToken cancellationToken)

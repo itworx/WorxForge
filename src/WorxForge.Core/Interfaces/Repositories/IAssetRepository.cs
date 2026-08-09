@@ -16,7 +16,7 @@ public interface IAssetRepository
     Task<IReadOnlyList<AssetSummaryDto>> GetTrendingAsync(int limit, CancellationToken cancellationToken);
     Task<IReadOnlyList<AssetSummaryDto>> GetUsefulThisWeekAsync(Guid userId, int limit, CancellationToken cancellationToken);
     Task<IReadOnlyList<AssetSummaryDto>> GetRecentlyUpdatedAsync(Guid userId, int limit, CancellationToken cancellationToken);
-    Task<IReadOnlyList<AssetSummaryDto>> GetSavedAssetsAsync(Guid userId, CancellationToken cancellationToken);
+    Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> GetSavedAssetsAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken);
     Task<IReadOnlyList<AssetSummaryDto>> GetRecommendedForYouAsync(Guid userId, int limit, CancellationToken cancellationToken);
     Task<IReadOnlyList<AssetSummaryDto>> GetPopularAcrossTeamsAsync(Guid userId, int limit, CancellationToken cancellationToken);
     Task<Guid> CreateAsync(Asset asset, IEnumerable<Guid> toolIds, IEnumerable<Guid> tagIds, CancellationToken cancellationToken);

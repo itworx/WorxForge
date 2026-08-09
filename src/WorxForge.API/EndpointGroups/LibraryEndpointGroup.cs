@@ -23,7 +23,7 @@ public static class LibraryEndpointGroup
 
     private static async Task<IResult> GetSavedAssetsAsync(
         ClaimsPrincipal user,
-        IQueryHandler<GetSavedAssetsQuery, IReadOnlyList<AssetSummaryDto>> handler,
+        IQueryHandler<GetSavedAssetsQuery, PagedResultDto<AssetSummaryDto>> handler,
         [FromQuery(Name = "Page")] int? page,
         [FromQuery(Name = "PageSize")] int? pageSize,
         CancellationToken cancellationToken)
