@@ -6,16 +6,20 @@ import { AssetToolTags } from "./AssetToolTags";
 import { AssetCardMeta } from "./AssetCardMeta";
 import { AssetCardStats } from "./AssetCardStats";
 import { BookmarkButton } from "./BookmarkButton";
+import { AssetCardMenu } from "./AssetCardMenu";
 
 interface AssetCardProps {
   asset: AssetSummary;
   onToggleBookmark?: (assetId: string, isBookmarked: boolean) => void;
+  onEdit?: (assetId: string) => void;
+  onDelete?: (assetId: string) => void;
   className?: string;
   showOpenAssetAction?: boolean;
 }
 
-export function AssetCard({ asset, onToggleBookmark, className = "", showOpenAssetAction = true }: AssetCardProps) {
+export function AssetCard({ asset, onToggleBookmark, onEdit, onDelete, className = "", showOpenAssetAction = true }: AssetCardProps) {
   const titleId = `asset-card-title-${asset.assetId}`;
+  const hasManageActions = Boolean(onEdit || onDelete);
 
   return (
     <article
@@ -24,11 +28,21 @@ export function AssetCard({ asset, onToggleBookmark, className = "", showOpenAss
     >
       <header className="flex items-start justify-between gap-1.5">
         <AssetBadge label={asset.assetTypeName} variant="primary" />
-        <BookmarkButton
-          assetId={asset.assetId}
-          isBookmarked={asset.isBookmarked}
-          onToggle={onToggleBookmark}
-        />
+        {hasManageActions ? (
+          <AssetCardMenu
+            assetId={asset.assetId}
+            isBookmarked={asset.isBookmarked}
+            onToggleBookmark={onToggleBookmark}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+        ) : (
+          <BookmarkButton
+            assetId={asset.assetId}
+            isBookmarked={asset.isBookmarked}
+            onToggle={onToggleBookmark}
+          />
+        )}
       </header>
 
       <h3 id={titleId} className="min-h-11 text-base leading-snug font-semibold text-text">

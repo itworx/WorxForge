@@ -4,10 +4,12 @@ import { AssetCard } from "./AssetCard";
 interface AssetsDashboardProps {
   assets: AssetSummary[];
   onToggleBookmark?: (assetId: string, isBookmarked: boolean) => void;
+  onEdit?: (assetId: string) => void;
+  onDelete?: (assetId: string) => void;
   className?: string;
 }
 
-export function AssetsDashboard({ assets, onToggleBookmark, className = "" }: AssetsDashboardProps) {
+export function AssetsDashboard({ assets, onToggleBookmark, onEdit, onDelete, className = "" }: AssetsDashboardProps) {
   if (assets.length === 0) {
     return <p className="text-sm text-text/70">No assets to show.</p>;
   }
@@ -17,7 +19,7 @@ export function AssetsDashboard({ assets, onToggleBookmark, className = "" }: As
       className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${className}`}
     >
       {assets.map((asset) => (
-        <AssetCard key={asset.assetId} asset={asset} onToggleBookmark={onToggleBookmark} />
+        <AssetCard key={asset.assetId} asset={asset} onToggleBookmark={onToggleBookmark} onEdit={onEdit} onDelete={onDelete} />
       ))}
     </div>
   );

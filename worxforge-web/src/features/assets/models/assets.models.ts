@@ -1,4 +1,6 @@
-﻿export interface AssetSummary {
+﻿import type { PagedRequest, PagedResult } from "../../../models/common.models";
+
+export interface AssetSummary {
   assetId: string;
   title: string;
   description?: string;
@@ -64,3 +66,7 @@ export interface CreateAssetRequest {
 export interface UpdateAssetRequest extends CreateAssetRequest {
   assetId: string;
 }
+
+export type MyAssetsRequest = PagedRequest;
+
+export type MyAssetsResult = PagedResult<AssetSummary>;

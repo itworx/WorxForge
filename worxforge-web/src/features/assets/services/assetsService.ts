@@ -1,6 +1,23 @@
-import { ApiException, Client, type AssetDetailsDto, type CreateAssetRequest, type LookupItemDto, type UpdateAssetRequest } from "../../../api/worxforgeClient";
+import { ApiException, Client, type AssetDetailsDto, type AssetSummaryDto, type CreateAssetRequest, type LookupItemDto, type UpdateAssetRequest } from "../../../api/worxforgeClient";
 import { createDevAuthenticatedFetch } from "../../../api/httpClient";
-import type { AssetDetails, AssetSummary } from "../models/assets.models";
+import type { AssetDetails, AssetSummary, MyAssetsRequest, MyAssetsResult } from "../models/assets.models";
+
+function mapDtoToAssetSummary(dto: AssetSummaryDto): AssetSummary {
+  return {
+    assetId: dto.assetId ?? "",
+    title: dto.title ?? "",
+    description: dto.description,
+    assetTypeName: dto.assetTypeName ?? "",
+    domainName: dto.domainName ?? "",
+    tools: dto.tools ?? [],
+    authorDisplayName: dto.authorDisplayName ?? "",
+    createdAt: dto.createdAt ?? "",
+    updatedAt: dto.updatedAt ?? "",
+    reactionCount: dto.reactionCount ?? 0,
+    commentCount: dto.commentCount ?? 0,
+    isBookmarked: dto.isBookmarked ?? false
+  };
+}
 
 function mapDtoToAssetDetails(dto: AssetDetailsDto): AssetDetails {
   return {
@@ -60,6 +77,9 @@ export interface AssetsService {
   uploadMarkdown(file: File, signal?: AbortSignal): Promise<string>;
   createAsset(body: CreateAssetRequest, signal?: AbortSignal): Promise<void>;
   updateAsset(assetId: string, body: UpdateAssetRequest, signal?: AbortSignal): Promise<void>;
+  getMyAssets(request: MyAssetsRequest, signal?: AbortSignal): Promise<MyAssetsResult>;
+  deleteAsset(assetId: string, signal?: AbortSignal): Promise<void>;
+  setBookmark(assetId: string, isBookmarked: boolean, signal?: AbortSignal): Promise<void>;
 }
 
 type UnknownRecord = Record<string, unknown>;
@@ -338,6 +358,25 @@ export function createAssetsService(baseUrl: string = import.meta.env.VITE_API_B
 
     updateAsset(assetId, body, signal) {
       return client.assetsPUT(assetId, body, signal);
+    },
+
+    async getMyAssets(request, signal) {
+      const dto = await client.myAssets(request.page, request.pageSize, signal);
+      return {
+        items: (dto.items ?? []).map(mapDtoToAssetSummary),
+        page: dto.page ?? request.page,
+        pageSize: dto.pageSize ?? request.pageSize,
+        totalCount: dto.totalCount ?? 0,
+        hasNextPage: dto.hasNextPage ?? false
+      };
+    },
+
+    deleteAsset(assetId, signal) {
+      return client.assetsDELETE2(assetId, signal);
+    },
+
+    setBookmark(assetId, isBookmarked, signal) {
+      return isBookmarked ? client.bookmarkPOST(assetId, signal) : client.bookmarkDELETE(assetId, signal);
     }
   };
 }
