@@ -6,6 +6,7 @@ using WorxForge.Domain.Dtos.Common;
 using WorxForge.Domain.Dtos.Notifications;
 using WorxForge.Domain.Entities;
 using WorxForge.Domain.Enums;
+using WorxForge.Domain.Errors;
 using WorxForge.Domain.Exceptions;
 
 namespace WorxForge.Infrastructure.Services;
@@ -33,16 +34,16 @@ public sealed class NotificationService(
     public async Task MarkAsReadAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken)
     {
         var notification = await notificationRepository.GetByIdAsync(notificationId, cancellationToken)
-            ?? throw new NotFoundException($"Notification '{notificationId}' was not found.");
+            ?? throw new NotFoundException(Errors.NotificationNotFound);
 
         if (notification.RecipientUserId != userId)
         {
-            throw new ForbiddenException("You are not allowed to access this notification.");
+            throw new ForbiddenException(Errors.NotificationForbidden);
         }
 
         if (notification.IsRead)
         {
-            throw new ConflictException($"Notification '{notificationId}' has already been read.");
+            throw new ConflictException(Errors.NotificationAlreadyRead);
         }
 
         await notificationRepository.MarkAsReadAsync(notificationId, cancellationToken);

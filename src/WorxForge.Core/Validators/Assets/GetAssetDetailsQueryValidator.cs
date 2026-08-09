@@ -1,4 +1,5 @@
 ﻿using WorxForge.Core.Abstractions;
+using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Queries.Assets;
 
 namespace WorxForge.Core.Validators.Assets;
@@ -9,12 +10,12 @@ public sealed class GetAssetDetailsQueryValidator : IRequestValidator<GetAssetDe
     {
         if (request.AssetId == Guid.Empty)
         {
-            throw new ArgumentException("AssetId is required.", nameof(request.AssetId));
+            throw new ValidationException("AssetId is required.");
         }
 
         if (request.RequestingUserId == Guid.Empty)
         {
-            throw new ArgumentException("RequestingUserId is required.", nameof(request.RequestingUserId));
+            throw new ValidationException("RequestingUserId is required.");
         }
 
         return Task.CompletedTask;
