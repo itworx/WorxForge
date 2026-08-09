@@ -174,6 +174,10 @@ export function MainLayout() {
   }, [location.pathname]);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (!isMobileSidebarOpen) {
       return undefined;
     }
