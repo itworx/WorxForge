@@ -18,6 +18,13 @@ public sealed class ReportRepository(WorxForgeDbContext dbContext) : IReportRepo
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task AddAssetReportAsync(Report report, ReportAsset reportAsset, CancellationToken cancellationToken)
+    {
+        await dbContext.Reports.AddAsync(report, cancellationToken);
+        await dbContext.ReportAssets.AddAsync(reportAsset, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task UpdateAsync(Report report, CancellationToken cancellationToken)
     {
         dbContext.Reports.Update(report);
@@ -53,22 +60,18 @@ public sealed class ReportRepository(WorxForgeDbContext dbContext) : IReportRepo
 
         var skip = (page - 1) * pageSize;
 
-        // Left-join ReportAsset and ReportComment; only one will be non-null per report.
         var items = await query
             .Skip(skip)
             .Take(pageSize)
             .Join(dbContext.Users.AsNoTracking(), report => report.ReporterUserId, user => user.UserId, (report, user) => new { report, user })
             .GroupJoin(dbContext.ReportAssets.AsNoTracking(), x => x.report.ReportId, ra => ra.ReportId, (x, ra) => new { x.report, x.user, ra })
-            .SelectMany(x => x.ra.DefaultIfEmpty(), (x, ra) => new { x.report, x.user, ra })
-            .GroupJoin(dbContext.ReportComments.AsNoTracking(), x => x.report.ReportId, rc => rc.ReportId, (x, rc) => new { x.report, x.user, x.ra, rc })
-            .SelectMany(x => x.rc.DefaultIfEmpty(), (x, rc) => new AdminReportDto
+            .SelectMany(x => x.ra.DefaultIfEmpty(), (x, ra) => new AdminReportDto
             {
                 ReportId         = x.report.ReportId,
                 ReporterUsername = x.user.Username,
                 Reason           = x.report.Reason,
                 Status           = x.report.Status,
-                AssetId          = x.ra != null ? x.ra.AssetId : (Guid?)null,
-                CommentId        = rc != null ? rc.CommentId : (Guid?)null,
+                AssetId          = ra != null ? ra.AssetId : (Guid?)null,
                 CreatedAt        = x.report.CreatedAt,
                 ResolvedAt       = x.report.ResolvedAt
             })
