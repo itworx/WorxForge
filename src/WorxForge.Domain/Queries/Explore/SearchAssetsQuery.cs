@@ -13,7 +13,7 @@ public sealed class SearchAssetsQuery
     public Guid? ToolId { get; init; }
     public AssetFreshness? Freshness { get; init; }
     public int Page { get; init; } = 1;
-    public int PageSize { get; init; } = 12;
+    public int PageSize { get; init; } = 20;
 }
 
 // Repository-facing search criteria: parsing of Q into FTS terms/hashtags already happened in the handler.
