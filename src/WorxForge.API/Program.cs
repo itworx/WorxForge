@@ -1,4 +1,5 @@
-﻿using Microsoft.OpenApi;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using Serilog;
 using WorxForge.API.Configuration;
 using WorxForge.API.Extensions;
@@ -46,6 +47,13 @@ builder.Services.AddSignalR();
 builder.Services.AddHostedService<NotificationDeliveryBackgroundService>();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<WorxForgeDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 await app.Services.SeedWorxForgeDataAsync();
 
