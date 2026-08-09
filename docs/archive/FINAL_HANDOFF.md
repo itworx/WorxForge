@@ -227,6 +227,7 @@ Feature work has since moved well past the foundation-only state described above
 - Authentication (JWT + Google), authorization policies, assets, comments/replies, reactions (like/dislike), and asset search are all implemented.
 - Real-time notifications: `NotificationHub` (SignalR, API-layer only) + a `Channel`-backed queue (`INotificationQueue`/`NotificationQueue`) decouple persistence (awaited, request path) from delivery (`NotificationDeliveryBackgroundService`, best-effort). Comment, reply, and like/dislike actions all raise notifications via `INotificationService.SendAsync`.
 - EF Core model drift can happen silently when entities gain fields without a matching migration (e.g. `Comment.UpdatedAt`) — always run `dotnet ef database update` after pulling, and treat `PendingModelChangesWarning` as a signal to run `dotnet ef migrations add` before assuming your DB is in sync. See `/memories/repo/worxforge-be.md` for the exact command pattern used in this repo.
+- CORS: the API previously had no CORS middleware at all, which blocked every browser-based frontend call. `AddWorxForgeCors`/`UseCors` (`WorxForge.API/Configuration/CorsConfigurationExtensions.cs`) now enforce an explicit allow-list read from `Cors:AllowedOrigins` — **required** at startup (the app fails fast if it's missing/empty). Set it via user-secrets (see README.md "Local development configuration"); it is intentionally not committed to `appsettings.*.json`.
 
 This section is intentionally brief — see git history and PR descriptions for full detail on each feature.
 

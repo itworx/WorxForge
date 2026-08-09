@@ -1,4 +1,5 @@
-﻿using WorxForge.API.EndpointGroups;
+﻿using WorxForge.API.Configuration;
+using WorxForge.API.EndpointGroups;
 using WorxForge.API.Hubs;
 using WorxForge.Domain.Constants;
 
@@ -19,6 +20,7 @@ public static class ApplicationBuilderExtensions
         // Enforce TLS so the SignalR "access_token" query string (see
         // AuthenticationConfigurationExtensions.OnMessageReceived) is never sent in cleartext.
         app.UseHttpsRedirection();
+        app.UseCors(CorsConfigurationExtensions.PolicyName);
         app.UseAuthentication();
         app.UseAuthorization();
         return app;
