@@ -11,6 +11,7 @@ using WorxForge.Core.Interfaces.Services;
 using WorxForge.Domain.Constants;
 using WorxForge.Domain.Dtos.Authentication;
 using WorxForge.Domain.Enums;
+using WorxForge.Domain.Errors;
 using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Entities;
 using WorxForge.Infrastructure.Options;
@@ -77,7 +78,7 @@ public sealed class AuthenticationService(
 
         if (!string.Equals(user.GoogleId, developmentGoogleSubject, StringComparison.Ordinal))
         {
-            throw new WorxForgeException("Test user email is linked to a different Google account.");
+            throw new ConflictException(Errors.AuthenticationEmailAlreadyLinked);
         }
 
         return await BuildAccessTokenAsync(user, cancellationToken);
@@ -104,7 +105,7 @@ public sealed class AuthenticationService(
 
         if (string.IsNullOrWhiteSpace(idToken))
         {
-            throw new WorxForgeException("Google ID token is required.");
+            throw new ValidationException("Google ID token is required.");
         }
 
         var googleClientId = ResolveGoogleClientId();
@@ -121,7 +122,7 @@ public sealed class AuthenticationService(
         }
         catch (InvalidJwtException ex)
         {
-            throw new WorxForgeException("Google ID token is invalid.", ex);
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials, ex);
         }
         catch (OperationCanceledException)
         {
@@ -129,17 +130,17 @@ public sealed class AuthenticationService(
         }
         catch (Exception ex)
         {
-            throw new WorxForgeException("Failed to validate Google ID token.", ex);
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials, ex);
         }
 
         if (!payload.EmailVerified || string.IsNullOrWhiteSpace(payload.Email))
         {
-            throw new WorxForgeException("Google account email must be verified.");
+            throw new UnauthorizedException(Errors.AuthenticationEmailNotVerified);
         }
 
         if (string.IsNullOrWhiteSpace(payload.Subject))
         {
-            throw new WorxForgeException("Google subject is missing from ID token payload.");
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
         }
 
         var googleSubject = payload.Subject.Trim();
@@ -172,7 +173,7 @@ public sealed class AuthenticationService(
 
         if (!string.Equals(user.GoogleId, googleSubject, StringComparison.Ordinal))
         {
-            throw new WorxForgeException("This email is already linked to a different Google account.");
+            throw new ConflictException(Errors.AuthenticationEmailAlreadyLinked);
         }
 
         return await BuildAccessTokenAsync(user, cancellationToken);
@@ -187,19 +188,19 @@ public sealed class AuthenticationService(
 
         if (userId == Guid.Empty)
         {
-            throw new WorxForgeException("User identifier is required.");
+            throw new ValidationException("User identifier is required.");
         }
 
         if (sessionId == Guid.Empty)
         {
-            throw new WorxForgeException("Session identifier is required.");
+            throw new ValidationException("Session identifier is required.");
         }
 
         var session = await _authSessionRepository.GetByIdAsync(sessionId, cancellationToken);
 
         if (session is null || session.UserId != userId)
         {
-            throw new WorxForgeException("Session was not found.");
+            throw new NotFoundException(Errors.AuthenticationSessionNotFound);
         }
 
         await _authSessionRepository.RevokeAsync(sessionId, cancellationToken);
@@ -279,7 +280,7 @@ public sealed class AuthenticationService(
     {
         if (string.IsNullOrWhiteSpace(payload.Subject))
         {
-            throw new WorxForgeException("Google subject is missing from ID token payload.");
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
         }
 
         var displayName = string.IsNullOrWhiteSpace(payload.Name) ? username : payload.Name.Trim();

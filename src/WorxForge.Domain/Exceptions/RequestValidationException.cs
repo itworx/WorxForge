@@ -1,9 +1,11 @@
+using ErrorsCatalog = WorxForge.Domain.Errors.Errors;
+
 namespace WorxForge.Domain.Exceptions;
 
 public sealed class RequestValidationException : WorxForgeException
 {
     public RequestValidationException(IReadOnlyDictionary<string, string[]> errors)
-        : base("One or more validation errors occurred.")
+        : base(ErrorsCatalog.ValidationFailed)
     {
         Errors = errors;
     }

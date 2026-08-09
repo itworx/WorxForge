@@ -4,6 +4,8 @@ using WorxForge.Domain.Constants;
 using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Entities;
 using WorxForge.Domain.Enums;
+using WorxForge.Domain.Errors;
+using WorxForge.Domain.Exceptions;
 
 namespace WorxForge.Infrastructure.Services;
 
@@ -18,7 +20,7 @@ public sealed class ReactionService(
         var asset = await assetRepository.GetByIdAsync(assetId, cancellationToken);
         if (asset is null)
         {
-            throw new KeyNotFoundException($"Asset '{assetId}' was not found.");
+            throw new NotFoundException(Errors.AssetNotFound);
         }
 
         var normalizedReactionType = ReactionTypes.Normalize(reactionType);
@@ -48,7 +50,7 @@ public sealed class ReactionService(
         var asset = await assetRepository.GetByIdAsync(assetId, cancellationToken);
         if (asset is null)
         {
-            throw new KeyNotFoundException($"Asset '{assetId}' was not found.");
+            throw new NotFoundException(Errors.AssetNotFound);
         }
 
         await reactionRepository.DeleteAsync(userId, assetId, cancellationToken);

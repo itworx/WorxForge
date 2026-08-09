@@ -11,6 +11,7 @@ using WorxForge.Domain.Commands.Library;
 using WorxForge.Domain.Constants;
 using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Dtos.Explore;
+using WorxForge.Domain.Errors;
 using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Queries.Assets;
 using WorxForge.Domain.Queries.Lookup;
@@ -129,7 +130,7 @@ public static class AssetsEndpointGroup
     {
         var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;
         if (!Guid.TryParse(userIdClaim, out var authorId))
-            throw new WorxForgeException("Authenticated user identifier is invalid.");
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
 
         var command = new CreateAssetCommand
         {
@@ -157,7 +158,7 @@ public static class AssetsEndpointGroup
     {
         var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;
         if (!Guid.TryParse(userIdClaim, out var requestingUserId))
-            throw new WorxForgeException("Authenticated user identifier is invalid.");
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
 
         var command = new UpdateAssetCommand
         {
@@ -185,7 +186,7 @@ public static class AssetsEndpointGroup
     {
         var userIdClaim = httpContext.User.FindFirst(ClaimConstants.UserId)?.Value;
         if (!Guid.TryParse(userIdClaim, out var requestingUserId))
-            throw new WorxForgeException("Authenticated user identifier is invalid.");
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
 
         var command = new DeleteAssetCommand
         {
@@ -250,20 +251,9 @@ public static class AssetsEndpointGroup
             RequestingUserId = userId
         };
 
-        try
-        {
-            await validator.ValidateAsync(query, cancellationToken);
-            var details = await handler.HandleAsync(query, cancellationToken);
-            return Results.Ok(details);
-        }
-        catch (ArgumentException exception)
-        {
-            return Results.BadRequest(new { message = exception.Message });
-        }
-        catch (KeyNotFoundException exception)
-        {
-            return Results.NotFound(new { message = exception.Message });
-        }
+        await validator.ValidateAsync(query, cancellationToken);
+        var details = await handler.HandleAsync(query, cancellationToken);
+        return Results.Ok(details);
     }
 
     private static async Task<IResult> GetAssetCommentsAsync(
@@ -413,24 +403,9 @@ public static class AssetsEndpointGroup
             ReactionType = request.ReactionType
         };
 
-        try
-        {
-            await validator.ValidateAsync(command, cancellationToken);
-            var response = await handler.HandleAsync(command, cancellationToken);
-            return Results.Ok(response);
-        }
-        catch (RequestValidationException validationException)
-        {
-            return Results.ValidationProblem(validationException.Errors);
-        }
-        catch (KeyNotFoundException exception)
-        {
-            return Results.NotFound(new { message = exception.Message });
-        }
-        catch (InvalidOperationException exception)
-        {
-            return Results.BadRequest(new { message = exception.Message });
-        }
+        await validator.ValidateAsync(command, cancellationToken);
+        var response = await handler.HandleAsync(command, cancellationToken);
+        return Results.Ok(response);
     }
 
     private static async Task<IResult> RemoveAssetReactionAsync(
@@ -452,19 +427,8 @@ public static class AssetsEndpointGroup
             AssetId = assetId
         };
 
-        try
-        {
-            await validator.ValidateAsync(command, cancellationToken);
-            var response = await handler.HandleAsync(command, cancellationToken);
-            return Results.Ok(response);
-        }
-        catch (RequestValidationException validationException)
-        {
-            return Results.ValidationProblem(validationException.Errors);
-        }
-        catch (KeyNotFoundException exception)
-        {
-            return Results.NotFound(new { message = exception.Message });
-        }
+        await validator.ValidateAsync(command, cancellationToken);
+        var response = await handler.HandleAsync(command, cancellationToken);
+        return Results.Ok(response);
     }
 }
