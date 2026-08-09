@@ -23,7 +23,7 @@ export function BrowseByArea({ domains, isLoading = false }: BrowseByAreaProps) 
           : domains.map((domain) => (
               <Link
                 key={domain.domainId}
-                to={`${ROUTES.EXPLORE}?domain=${encodeURIComponent(domain.name)}`}
+                to={`${ROUTES.EXPLORE}?domainId=${encodeURIComponent(domain.domainId)}`}
                 className="rounded-xl border border-secondary/30 bg-white p-4 text-left shadow-sm transition-colors hover:border-primary"
               >
                 <div className="text-sm font-semibold">{domain.name}</div>

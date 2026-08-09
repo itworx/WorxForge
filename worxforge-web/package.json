@@ -25,6 +25,7 @@
     "react-dom": "^19.2.7",
     "react-hook-form": "^7.85.0",
     "react-icons": "^5.7.0",
+    "react-markdown": "^10.1.0",
     "react-router-dom": "^7.9.3",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.6.0",
