@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using WorxForge.Domain.Commands.Assets;
 using WorxForge.Domain.Commands.Comments;
 using WorxForge.Domain.Commands.Library;
+using WorxForge.Domain.Commands.Reports;
 using WorxForge.Domain.Constants;
 using WorxForge.Domain.Dtos.Assets;
 using WorxForge.Domain.Dtos.Explore;
@@ -17,6 +18,7 @@ using WorxForge.Domain.Queries.Assets;
 using WorxForge.Domain.Queries.Lookup;
 using WorxForge.API.Models.Requests.Assets;
 using WorxForge.API.Models.Requests.Comments;
+using WorxForge.API.Models.Requests.Reports;
 
 namespace WorxForge.API.EndpointGroups;
 
@@ -72,6 +74,8 @@ public static class AssetsEndpointGroup
         group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         group.MapDelete("/{assetId:guid}/reaction", RemoveAssetReactionAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapPost("/{assetId:guid}/report", ReportAssetAsync)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         return group;
     }
@@ -499,5 +503,42 @@ public static class AssetsEndpointGroup
         await validator.ValidateAsync(command, cancellationToken);
         var response = await handler.HandleAsync(command, cancellationToken);
         return Results.Ok(response);
+    }
+
+    private static async Task<IResult> ReportAssetAsync(
+        Guid assetId,
+        [FromBody] ReportRequest request,
+        ClaimsPrincipal user,
+        IRequestValidator<ReportAssetCommand> validator,
+        ICommandHandler<ReportAssetCommand> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var command = new ReportAssetCommand
+        {
+            UserId = userId,
+            AssetId = assetId,
+            Reason = request.Reason
+        };
+
+        try
+        {
+            await validator.ValidateAsync(command, cancellationToken);
+            await handler.HandleAsync(command, cancellationToken);
+            return Results.Ok();
+        }
+        catch (RequestValidationException validationException)
+        {
+            return Results.ValidationProblem(validationException.Errors);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return Results.NotFound(new { message = exception.Message });
+        }
     }
 }

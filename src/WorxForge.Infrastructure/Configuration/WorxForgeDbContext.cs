@@ -23,7 +23,6 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
     public DbSet<Bookmark> Bookmarks => Set<Bookmark>();
     public DbSet<Report> Reports => Set<Report>();
     public DbSet<ReportAsset> ReportAssets => Set<ReportAsset>();
-    public DbSet<ReportComment> ReportComments => Set<ReportComment>();
     public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -44,7 +43,6 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
         ConfigureBookmark(modelBuilder.Entity<Bookmark>());
         ConfigureReport(modelBuilder.Entity<Report>());
         ConfigureReportAsset(modelBuilder.Entity<ReportAsset>());
-        ConfigureReportComment(modelBuilder.Entity<ReportComment>());
         ConfigureNotification(modelBuilder.Entity<Notification>());
     }
 
@@ -254,21 +252,6 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
         entity.HasOne<Asset>()
             .WithMany()
             .HasForeignKey(e => e.AssetId)
-            .OnDelete(DeleteBehavior.NoAction);
-        ApplySnakeCaseColumnNames(entity);
-    }
-
-    private static void ConfigureReportComment(EntityTypeBuilder<ReportComment> entity)
-    {
-        entity.ToTable("REPORT_COMMENT");
-        entity.HasKey(e => e.ReportId);
-        entity.HasOne<Report>()
-            .WithOne()
-            .HasForeignKey<ReportComment>(e => e.ReportId)
-            .OnDelete(DeleteBehavior.NoAction);
-        entity.HasOne<Comment>()
-            .WithMany()
-            .HasForeignKey(e => e.CommentId)
             .OnDelete(DeleteBehavior.NoAction);
         ApplySnakeCaseColumnNames(entity);
     }

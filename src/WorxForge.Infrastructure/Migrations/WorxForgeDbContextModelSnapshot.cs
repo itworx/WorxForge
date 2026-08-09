@@ -430,23 +430,6 @@ namespace WorxForge.Infrastructure.Migrations
                     b.ToTable("REPORT_ASSET", (string)null);
                 });
 
-            modelBuilder.Entity("WorxForge.Domain.Entities.ReportComment", b =>
-                {
-                    b.Property<Guid>("ReportId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("report_id");
-
-                    b.Property<Guid>("CommentId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("comment_id");
-
-                    b.HasKey("ReportId");
-
-                    b.HasIndex("CommentId");
-
-                    b.ToTable("REPORT_COMMENT", (string)null);
-                });
-
             modelBuilder.Entity("WorxForge.Domain.Entities.Tag", b =>
                 {
                     b.Property<Guid>("TagId")
@@ -748,21 +731,6 @@ namespace WorxForge.Infrastructure.Migrations
                     b.HasOne("WorxForge.Domain.Entities.Report", null)
                         .WithOne()
                         .HasForeignKey("WorxForge.Domain.Entities.ReportAsset", "ReportId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("WorxForge.Domain.Entities.ReportComment", b =>
-                {
-                    b.HasOne("WorxForge.Domain.Entities.Comment", null)
-                        .WithMany()
-                        .HasForeignKey("CommentId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("WorxForge.Domain.Entities.Report", null)
-                        .WithOne()
-                        .HasForeignKey("WorxForge.Domain.Entities.ReportComment", "ReportId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });
