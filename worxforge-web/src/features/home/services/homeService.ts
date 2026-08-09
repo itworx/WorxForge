@@ -16,7 +16,6 @@ function toAssetSummary(dto: AssetSummaryDto): AssetSummary {
     createdAt: dto.createdAt ?? "",
     updatedAt: dto.updatedAt ?? "",
     reactionCount: dto.reactionCount ?? 0,
-    dislikeCount: dto.dislikeCount ?? 0,
     commentCount: dto.commentCount ?? 0,
     isBookmarked: dto.isBookmarked ?? false
   };

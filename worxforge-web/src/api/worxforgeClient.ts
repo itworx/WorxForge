@@ -2604,12 +2604,12 @@ export interface AssetSummaryDto {
     createdAt?: string;
     updatedAt?: string;
     reactionCount?: number;
-    dislikeCount?: number;
     commentCount?: number;
     isBookmarked?: boolean;
 }
 
 export interface AssetDetailsDto extends AssetSummaryDto {
+    dislikeCount?: number;
     markdownContent?: string | undefined;
     useCaseName?: string | undefined;
     compatibleTools?: string[] | undefined;

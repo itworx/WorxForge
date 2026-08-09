@@ -21,6 +21,7 @@ function toAssetSummary(dto: AssetSummaryDto): AssetSummary {
   };
 }
 
+
 function toAssetSearchResult(dto: AssetSummaryDtoPagedResultDto): AssetSearchResult {
   return {
     items: (dto.items ?? []).map(toAssetSummary),
