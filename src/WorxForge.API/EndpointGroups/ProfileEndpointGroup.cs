@@ -1,5 +1,7 @@
 ﻿using WorxForge.Core.Abstractions;
 using WorxForge.Domain.Constants;
+using WorxForge.Domain.Dtos.Assets;
+using WorxForge.Domain.Dtos.Common;
 using WorxForge.Domain.Dtos.Profile;
 using WorxForge.Domain.Commands.Profile;
 using WorxForge.Domain.Errors;
@@ -15,6 +17,7 @@ public static class ProfileEndpointGroup
         var group = app.MapGroup("/api/profile");
         group.MapGet("/me", GetMyProfileAsync);
         group.MapGet("/{userId:guid}", GetPublicProfileAsync);
+        group.MapGet("/{userId:guid}/assets", GetUserAssetsAsync);
         group.MapPut("/me", UpdateMyProfileAsync);
         return group;
     }
@@ -68,5 +71,23 @@ public static class ProfileEndpointGroup
             cancellationToken);
 
         return Results.NoContent();
+    }
+
+    private static async Task<IResult> GetUserAssetsAsync(
+        Guid userId,
+        int? page,
+        int? pageSize,
+        IQueryHandler<GetUserAssetsQuery, PagedResultDto<MyAssetDto>> handler,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetUserAssetsQuery
+        {
+            TargetUserId = userId,
+            Page = page ?? 1,
+            PageSize = pageSize ?? 20
+        };
+
+        var response = await handler.HandleAsync(query, cancellationToken);
+        return Results.Ok(response);
     }
 }
