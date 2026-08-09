@@ -65,8 +65,10 @@ public static class AssetsEndpointGroup
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         group.MapDelete("/{assetId:guid}/comments/{commentId:guid}", DeleteAssetCommentAsync)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
-        group.MapPost("/{assetId:guid}/bookmark", BookmarkAssetAsync);
-        group.MapDelete("/{assetId:guid}/bookmark", RemoveBookmarkAsync);
+        group.MapPost("/{assetId:guid}/bookmark", BookmarkAssetAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        group.MapDelete("/{assetId:guid}/bookmark", RemoveBookmarkAsync)
+            .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         group.MapPost("/{assetId:guid}/reaction", ReactToAssetAsync)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         group.MapDelete("/{assetId:guid}/reaction", RemoveAssetReactionAsync)
@@ -380,8 +382,75 @@ public static class AssetsEndpointGroup
         await handler.HandleAsync(command, cancellationToken);
         return Results.NoContent();
     }
-    private static Task<IResult> BookmarkAssetAsync(BookmarkAssetCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
-    private static Task<IResult> RemoveBookmarkAsync([FromBody] RemoveBookmarkCommand command, CancellationToken cancellationToken) => throw new NotImplementedException();
+    private static async Task<IResult> BookmarkAssetAsync(
+        Guid assetId,
+        ClaimsPrincipal user,
+        IRequestValidator<BookmarkAssetCommand> validator,
+        ICommandHandler<BookmarkAssetCommand> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var command = new BookmarkAssetCommand
+        {
+            UserId = userId,
+            AssetId = assetId
+        };
+
+        try
+        {
+            await validator.ValidateAsync(command, cancellationToken);
+            await handler.HandleAsync(command, cancellationToken);
+            return Results.Ok();
+        }
+        catch (RequestValidationException validationException)
+        {
+            return Results.ValidationProblem(validationException.Errors);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return Results.NotFound(new { message = exception.Message });
+        }
+    }
+
+    private static async Task<IResult> RemoveBookmarkAsync(
+        Guid assetId,
+        ClaimsPrincipal user,
+        IRequestValidator<RemoveBookmarkCommand> validator,
+        ICommandHandler<RemoveBookmarkCommand> handler,
+        CancellationToken cancellationToken)
+    {
+        var userIdValue = user.FindFirstValue(ClaimConstants.UserId);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var command = new RemoveBookmarkCommand
+        {
+            UserId = userId,
+            AssetId = assetId
+        };
+
+        try
+        {
+            await validator.ValidateAsync(command, cancellationToken);
+            await handler.HandleAsync(command, cancellationToken);
+            return Results.Ok();
+        }
+        catch (RequestValidationException validationException)
+        {
+            return Results.ValidationProblem(validationException.Errors);
+        }
+        catch (KeyNotFoundException exception)
+        {
+            return Results.NotFound(new { message = exception.Message });
+        }
+    }
     private static async Task<IResult> ReactToAssetAsync(
         Guid assetId,
         ReactToAssetRequest request,
