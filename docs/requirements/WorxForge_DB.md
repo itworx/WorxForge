@@ -85,12 +85,7 @@ This document is a direct Markdown representation of the provided ERD.
 - `REPORT` 1 → 0..1 `REPORT_ASSET`
   - Report targets an asset.
 
-- `REPORT` 1 → 0..1 `REPORT_COMMENT`
-  - Report targets a comment.
-
 - `ASSET` 1 → Many `REPORT_ASSET`
-
-- `COMMENT` 1 → Many `REPORT_COMMENT`
 
 ---
 
@@ -122,7 +117,7 @@ This document is a direct Markdown representation of the provided ERD.
  email  string  
  email_verified  boolean  
  role  string  
- google_id  uuid  
+ google_id  string  
  avatar_url  string  
  created_at  datetime  
  updated_at  datetime  
@@ -131,8 +126,6 @@ This document is a direct Markdown representation of the provided ERD.
 ---
 
 ## AUTH_SESSION
-
- to be discussed
 
  Column  Type  Key 
 --------------------
@@ -186,6 +179,7 @@ This document is a direct Markdown representation of the provided ERD.
  use_case_id  uuid  FK 
  created_at  datetime  
  updated_at  datetime  
+ deleted_at  datetime  nullable
 
 ---
 
@@ -235,13 +229,12 @@ This document is a direct Markdown representation of the provided ERD.
  parent_comment_id  uuid  FK 
  content  text  
  created_at  datetime  
- deleted_at  datetime  
+ updated_at  datetime  nullable
+ deleted_at  datetime  nullable
 
 ---
 
 ## REACTION
-
- we can remove reaction_id and created_at
 
  Column  Type  Key 
 --------------------
@@ -291,15 +284,6 @@ This document is a direct Markdown representation of the provided ERD.
 --------------------
  report_id  uuid  PK, FK 
  asset_id  uuid  FK 
-
----
-
-## REPORT_COMMENT
-
- Column  Type  Key 
---------------------
- report_id  uuid  PK, FK 
- comment_id  uuid  FK 
 
 ---
 
