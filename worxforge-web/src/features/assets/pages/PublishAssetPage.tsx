@@ -241,7 +241,6 @@ export function PublishAssetPage() {
       createdAt: isEditMode ? (editAssetQuery.data?.preview.createdAt ?? new Date().toISOString()) : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       reactionCount: isEditMode ? (editAssetQuery.data?.preview.reactionCount ?? 0) : 0,
-      dislikeCount: isEditMode ? (editAssetQuery.data?.preview.dislikeCount ?? 0) : 0,
       commentCount: isEditMode ? (editAssetQuery.data?.preview.commentCount ?? 0) : 0,
       isBookmarked: isEditMode ? (editAssetQuery.data?.preview.isBookmarked ?? false) : false
     };

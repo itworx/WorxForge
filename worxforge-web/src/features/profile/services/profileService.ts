@@ -39,7 +39,6 @@ function toAssetSummary(value: unknown): AssetSummary {
     createdAt: asString(dto.createdAt),
     updatedAt: asString(dto.updatedAt),
     reactionCount: asNumber(dto.reactionCount),
-    dislikeCount: asNumber(dto.dislikeCount),
     commentCount: asNumber(dto.commentCount),
     isBookmarked: asBoolean(dto.isBookmarked)
   };

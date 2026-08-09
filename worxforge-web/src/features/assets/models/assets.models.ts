@@ -9,12 +9,12 @@
   createdAt: string;
   updatedAt: string;
   reactionCount: number;
-  dislikeCount: number;
   commentCount: number;
   isBookmarked: boolean;
 }
 
 export interface AssetDetails extends AssetSummary {
+  dislikeCount: number;
   markdownContent: string;
   useCaseName: string;
   compatibleTools: string[];

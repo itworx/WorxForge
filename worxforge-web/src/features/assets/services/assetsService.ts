@@ -145,7 +145,6 @@ function toPreviewSummary(source: UnknownRecord): AssetSummary {
     createdAt: toStringValue(source.createdAt) || new Date().toISOString(),
     updatedAt: toStringValue(source.updatedAt) || new Date().toISOString(),
     reactionCount: typeof source.reactionCount === "number" ? source.reactionCount : 0,
-    dislikeCount: 0,
     commentCount: typeof source.commentCount === "number" ? source.commentCount : 0,
     isBookmarked: typeof source.isBookmarked === "boolean" ? source.isBookmarked : false
   };
