@@ -1,8 +1,8 @@
-﻿using FluentValidation;
-using Microsoft.OpenApi;
+﻿using Microsoft.OpenApi;
 using Serilog;
 using WorxForge.API.Configuration;
 using WorxForge.API.Extensions;
+using WorxForge.API.Middlewares;
 using WorxForge.API.Services;
 using WorxForge.Core.Configuration;
 using WorxForge.Infrastructure.Configuration;
@@ -35,7 +35,8 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<BearerSecurityOperationFilter>();
 });
 builder.Services.AddOpenApi();
-builder.Services.AddValidatorsFromAssembly(typeof(WorxForge.Core.Configuration.DependencyInjection).Assembly);
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
 builder.Services.AddJwtAccessTokenAuthentication();
 builder.Services.AddWorxForgeAuthorization();
 builder.Services.AddWorxForgeCore();

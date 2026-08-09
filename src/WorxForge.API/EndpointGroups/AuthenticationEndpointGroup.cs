@@ -5,6 +5,7 @@ using WorxForge.Core.Interfaces.Services;
 using WorxForge.Domain.Commands.Authentication;
 using WorxForge.Domain.Dtos.Authentication;
 using WorxForge.Domain.Dtos.Profile;
+using WorxForge.Domain.Errors;
 using WorxForge.Domain.Exceptions;
 using WorxForge.Domain.Queries.Profile;
 
@@ -68,7 +69,7 @@ public static class AuthenticationEndpointGroup
 
         if (!Guid.TryParse(userIdClaim, out var userId) || !Guid.TryParse(sessionIdClaim, out var sessionId))
         {
-            throw new WorxForgeException("Authenticated user session is invalid.");
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
         }
 
         await handler.HandleAsync(
@@ -91,7 +92,7 @@ public static class AuthenticationEndpointGroup
 
         if (!Guid.TryParse(userIdClaim, out var userId))
         {
-            throw new WorxForgeException("Authenticated user identifier is invalid.");
+            throw new UnauthorizedException(Errors.AuthenticationInvalidCredentials);
         }
 
         var profile = await handler.HandleAsync(new GetMyProfileQuery { UserId = userId }, cancellationToken);

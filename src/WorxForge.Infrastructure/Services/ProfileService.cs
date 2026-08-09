@@ -1,6 +1,7 @@
 ﻿using WorxForge.Core.Interfaces.Repositories;
 using WorxForge.Core.Interfaces.Services;
 using WorxForge.Domain.Dtos.Profile;
+using WorxForge.Domain.Errors;
 using WorxForge.Domain.Exceptions;
 
 namespace WorxForge.Infrastructure.Services;
@@ -15,7 +16,7 @@ public sealed class ProfileService(IUserRepository userRepository) : IProfileSer
 
         if (user is null)
         {
-            throw new WorxForgeException("User was not found.");
+            throw new NotFoundException(Errors.UserNotFound);
         }
 
         return new ProfileDto
@@ -33,7 +34,7 @@ public sealed class ProfileService(IUserRepository userRepository) : IProfileSer
         var user = await _userRepository.GetByIdAsync(targetUserId, cancellationToken);
         if (user is null)
         {
-            throw new WorxForgeException("User was not found.");
+            throw new NotFoundException(Errors.UserNotFound);
         }
 
         return new ProfileDto
@@ -51,7 +52,7 @@ public sealed class ProfileService(IUserRepository userRepository) : IProfileSer
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
         if (user is null)
         {
-            throw new WorxForgeException("User was not found.");
+            throw new NotFoundException(Errors.UserNotFound);
         }
 
         var normalizedDisplayName = displayName.Trim();
@@ -61,7 +62,7 @@ public sealed class ProfileService(IUserRepository userRepository) : IProfileSer
         var existingByUsername = await _userRepository.GetByUsernameAsync(normalizedUsername, cancellationToken);
         if (existingByUsername is not null && existingByUsername.UserId != userId)
         {
-            throw new WorxForgeException("Username is already in use.");
+            throw new ConflictException(Errors.UserUsernameAlreadyInUse);
         }
 
         user.DisplayName = normalizedDisplayName;
