@@ -1,13 +1,11 @@
-﻿export function formatDate(isoDate: string): string {
-  const date = new Date(isoDate);
-  if (Number.isNaN(date.getTime())) {
+﻿import { format, isValid, parseISO } from "date-fns";
+
+export function formatDate(isoDate: string): string {
+  const date = parseISO(isoDate);
+  if (!isValid(date)) {
     return "";
   }
 
-  return new Intl.DateTimeFormat("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  }).format(date);
+  return format(date, "MMM d, yyyy");
 }
 
