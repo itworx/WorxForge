@@ -35,7 +35,6 @@ builder.Services.AddSwaggerGen(options =>
     options.OperationFilter<BearerSecurityOperationFilter>();
 });
 builder.Services.AddOpenApi();
-builder.Services.AddValidatorsFromAssembly(typeof(WorxForge.Core.Configuration.DependencyInjection).Assembly);
 builder.Services.AddWorxForgeCors(builder.Configuration);
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
