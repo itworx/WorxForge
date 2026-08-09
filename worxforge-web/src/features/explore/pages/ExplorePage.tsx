@@ -20,9 +20,10 @@ const DEFAULT_FILTER_VALUES: ExploreFilterValues = {
 
 export function ExplorePage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const initialDomainId = searchParams.get("domainId") ?? "";
   const [keywords, setKeywords] = useState(searchParams.get("q") ?? "");
-  const [filterValues, setFilterValues] = useState<ExploreFilterValues>(DEFAULT_FILTER_VALUES);
-  const [showFilters, setShowFilters] = useState(false);
+  const [filterValues, setFilterValues] = useState<ExploreFilterValues>({ ...DEFAULT_FILTER_VALUES, domainId: initialDomainId });
+  const [showFilters, setShowFilters] = useState(Boolean(initialDomainId));
   const [page, setPage] = useState(1);
 
   const { data: filters, isLoading: isLoadingFilters } = useExploreFilters();
