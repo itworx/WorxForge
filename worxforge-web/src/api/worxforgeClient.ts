@@ -261,12 +261,12 @@ export interface IClient {
      * @param isRead (optional) 
      * @return OK
      */
-    notifications(userId: string, isRead: boolean | undefined, page: number, pageSize: number, signal?: AbortSignal): Promise<void>;
+    notifications(userId: string, isRead: boolean | undefined, page: number, pageSize: number, signal?: AbortSignal): Promise<NotificationDtoPagedResultDto>;
 
     /**
      * @return OK
      */
-    unreadCount(userId: string, signal?: AbortSignal): Promise<void>;
+    unreadCount(userId: string, signal?: AbortSignal): Promise<UnreadCountDto>;
 
     /**
      * @return OK
@@ -2146,7 +2146,7 @@ export class Client implements IClient {
      * @param isRead (optional) 
      * @return OK
      */
-    notifications(userId: string, isRead: boolean | undefined, page: number, pageSize: number, signal?: AbortSignal): Promise<void> {
+    notifications(userId: string, isRead: boolean | undefined, page: number, pageSize: number, signal?: AbortSignal): Promise<NotificationDtoPagedResultDto> {
         let url_ = this.baseUrl + "/api/notifications?";
         if (userId === undefined || userId === null)
             throw new globalThis.Error("The parameter 'userId' must be defined and cannot be null.");
@@ -2170,6 +2170,7 @@ export class Client implements IClient {
             method: "GET",
             signal,
             headers: {
+                "Accept": "application/json"
             }
         };
 
@@ -2178,25 +2179,31 @@ export class Client implements IClient {
         });
     }
 
-    protected processNotifications(response: Response): Promise<void> {
+    protected processNotifications(response: Response): Promise<NotificationDtoPagedResultDto> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as NotificationDtoPagedResultDto;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            return throwException("Unauthorized", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<NotificationDtoPagedResultDto>(null as any);
     }
 
     /**
      * @return OK
      */
-    unreadCount(userId: string, signal?: AbortSignal): Promise<void> {
+    unreadCount(userId: string, signal?: AbortSignal): Promise<UnreadCountDto> {
         let url_ = this.baseUrl + "/api/notifications/unread-count?";
         if (userId === undefined || userId === null)
             throw new globalThis.Error("The parameter 'userId' must be defined and cannot be null.");
@@ -2208,6 +2215,7 @@ export class Client implements IClient {
             method: "GET",
             signal,
             headers: {
+                "Accept": "application/json"
             }
         };
 
@@ -2216,19 +2224,24 @@ export class Client implements IClient {
         });
     }
 
-    protected processUnreadCount(response: Response): Promise<void> {
+    protected processUnreadCount(response: Response): Promise<UnreadCountDto> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            const parsed = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver);
+            return typeof parsed === "number" ? { count: parsed } : (parsed as UnreadCountDto);
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            return throwException("Unauthorized", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<UnreadCountDto>(null as any);
     }
 
     /**
@@ -2236,6 +2249,9 @@ export class Client implements IClient {
      */
     read(body: MarkNotificationAsReadCommand, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/notifications/{notificationId}/read";
+        if (body.notificationId === undefined || body.notificationId === null)
+            throw new globalThis.Error("The parameter 'body.notificationId' must be defined.");
+        url_ = url_.replace("{notificationId}", encodeURIComponent("" + body.notificationId));
         url_ = url_.replace(/[?&]$/, "");
 
         const content_ = JSON.stringify(body);
@@ -2682,6 +2698,30 @@ export interface MarkAllNotificationsAsReadCommand {
 export interface MarkNotificationAsReadCommand {
     userId?: string;
     notificationId?: string;
+}
+
+export type NotificationDeliveryType = -1 | 0 | 1 | 2 | 3 | 4;
+
+export interface NotificationDto {
+    notificationId?: string;
+    type?: NotificationDeliveryType;
+    message?: string | undefined;
+    assetId?: string;
+    commentId?: string;
+    isRead?: boolean;
+    createdAt?: string;
+}
+
+export interface NotificationDtoPagedResultDto {
+    items?: NotificationDto[] | undefined;
+    page?: number;
+    pageSize?: number;
+    totalCount?: number;
+    readonly hasNextPage?: boolean;
+}
+
+export interface UnreadCountDto {
+    count?: number;
 }
 
 export interface PreviewAssetCommand {
