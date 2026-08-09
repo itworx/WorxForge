@@ -8,6 +8,8 @@ export interface MyProfile {
   emailVerified: boolean;
   avatarUrl?: string;
   createdAt: string;
+  publishedAssets: AssetSummary[];
+  statistics: ProfileStatistics;
 }
 
 export interface PublicProfile {
@@ -16,6 +18,7 @@ export interface PublicProfile {
   avatarUrl?: string;
   publishedAssets: AssetSummary[];
   followerCount: number;
+  statistics: ProfileStatistics;
 }
 
 export interface ProfileStatistics {

@@ -2,8 +2,9 @@
 import { FaCopy, FaDownload, FaFlag, FaRegThumbsDown, FaRegThumbsUp, FaShareAlt } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { ROUTES } from "../../../constants/routes.constants";
 import { useAssetDetails } from "../hooks/useAssetDetails";
 
 type PrimaryTab = "overview" | "discussion";
@@ -171,7 +172,12 @@ export function AssetDetailsPage() {
         <p className="mt-1 text-sm text-text/70">{asset.description}</p>
 
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text/60">
-          <span>{asset.authorDisplayName}</span>
+          <Link
+            to={ROUTES.PROFILE(asset.authorId)}
+            className="font-medium text-text/80 transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            {asset.authorDisplayName}
+          </Link>
           <span>Updated {new Date(asset.updatedAt).toLocaleDateString()}</span>
         </div>
 
