@@ -48,7 +48,7 @@ public static class LibraryEndpointGroup
     private static Task<IResult> GetFollowingAssetsAsync([AsParameters] GetFollowingAssetsQuery query, CancellationToken cancellationToken) => throw new NotImplementedException();
     private static async Task<IResult> GetMyAssetsAsync(
         ClaimsPrincipal user,
-        IQueryHandler<GetMyAssetsQuery, PagedResultDto<MyAssetDto>> handler,
+        IQueryHandler<GetMyAssetsQuery, PagedResultDto<AssetSummaryDto>> handler,
         [FromQuery(Name = "Page")] int? page,
         [FromQuery(Name = "PageSize")] int? pageSize,
         CancellationToken cancellationToken)

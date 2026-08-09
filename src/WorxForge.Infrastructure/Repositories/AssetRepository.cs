@@ -287,7 +287,8 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
             IsBookmarked = isBookmarked
         };
     }
-    public async Task<(IReadOnlyList<MyAssetDto> Items, int Total)> GetByOwnerAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken)
+
+    public async Task<(IReadOnlyList<AssetSummaryDto> Items, int Total)> GetOwnedAssetSummariesAsync(Guid userId, int page, int pageSize, CancellationToken cancellationToken)
     {
         var ownedAssets = dbContext.Assets
             .AsNoTracking()
@@ -301,30 +302,12 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
 
         var skip = (page - 1) * pageSize;
 
-        var items = await ownedAssets
+        var pagedAssets = ownedAssets
             .OrderByDescending(asset => asset.CreatedAt)
             .Skip(skip)
-            .Take(pageSize)
-            .Select(asset => new MyAssetDto
-            {
-                AssetId = asset.AssetId,
-                Title = asset.Title,
-                AssetTypeName = dbContext.AssetTypes
-                    .Where(assetType => assetType.AssetTypeId == asset.AssetTypeId)
-                    .Select(assetType => assetType.Name)
-                    .First(),
-                Version = null,
-                CreatedAt = asset.CreatedAt,
-                UpdatedAt = asset.UpdatedAt,
-                ViewCount = dbContext.AssetViews
-                    .Where(assetView => assetView.AssetId == asset.AssetId)
-                    .Sum(assetView => (int?)assetView.ViewCount) ?? 0,
-                BookmarkCount = dbContext.Bookmarks.Count(bookmark => bookmark.AssetId == asset.AssetId),
-                CommentCount = dbContext.Comments.Count(comment => comment.AssetId == asset.AssetId && comment.DeletedAt == null),
-                ReactionCount = dbContext.Reactions.Count(reaction => reaction.AssetId == asset.AssetId)
-            })
-            .ToListAsync(cancellationToken);
+            .Take(pageSize);
 
+        var items = await SelectAssetSummaries(pagedAssets, userId).ToListAsync(cancellationToken);
         return (items, total);
     }
     public Task<IReadOnlyList<AssetSummaryDto>> GetFeaturedAsync(int limit, CancellationToken cancellationToken) => throw new NotImplementedException();

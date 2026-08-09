@@ -7,13 +7,13 @@ using WorxForge.Domain.Queries.Assets;
 namespace WorxForge.Core.Handlers.Assets;
 
 public sealed class GetMyAssetsQueryHandler(IAssetRepository assetRepository)
-    : IQueryHandler<GetMyAssetsQuery, PagedResultDto<MyAssetDto>>
+    : IQueryHandler<GetMyAssetsQuery, PagedResultDto<AssetSummaryDto>>
 {
-    public async Task<PagedResultDto<MyAssetDto>> HandleAsync(GetMyAssetsQuery query, CancellationToken cancellationToken)
+    public async Task<PagedResultDto<AssetSummaryDto>> HandleAsync(GetMyAssetsQuery query, CancellationToken cancellationToken)
     {
-        var (items, total) = await assetRepository.GetByOwnerAsync(query.UserId, query.Page, query.PageSize, cancellationToken);
+        var (items, total) = await assetRepository.GetOwnedAssetSummariesAsync(query.UserId, query.Page, query.PageSize, cancellationToken);
 
-        return new PagedResultDto<MyAssetDto>
+        return new PagedResultDto<AssetSummaryDto>
         {
             Items = items,
             Page = query.Page,
