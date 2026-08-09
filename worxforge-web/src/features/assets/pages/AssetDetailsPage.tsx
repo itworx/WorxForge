@@ -1,78 +1,103 @@
-﻿import { useMemo, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { FaCopy, FaDownload, FaFlag, FaRegThumbsDown, FaRegThumbsUp, FaShareAlt } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import { useParams } from "react-router-dom";
-import type { AssetDetails } from "../models/assets.models";
+import { toast } from "sonner";
+import { useAssetDetails } from "../hooks/useAssetDetails";
 
 type PrimaryTab = "overview" | "discussion";
 type MarkdownTab = "rendered" | "raw";
 
-const SAMPLE_MARKDOWN = `# .NET Coding Standard
-
-## Naming
-
-- PascalCase for types, methods, and properties.
-- camelCase for locals and parameters.
-- Prefix interfaces with \`I\`.
-
-## Async
-
-- Suffix async methods with \`Async\`.
-- Never \`.Result\` or \`.Wait()\`.
-- Pass \`CancellationToken\` through public APIs.
-
-## Dependency Injection
-
-- Constructor injection only.
-- Register in \`Program.cs\` grouped by feature.
-
-## Testing
-
-- One test project per production project.
-- Arrange / Act / Assert with blank lines between sections.
-`;
-
-function createPageAsset(assetId: string): AssetDetails {
-  return {
-    assetId,
-    title: ".NET Coding Standard",
-    description:
-      "Team-approved coding standard for C# / .NET 8 projects - naming, structure, async, DI, and testing conventions.",
-    assetTypeName: "Coding standard",
-    domainName: "Development",
-    tools: ["Code review", "Version 2026.Q2"],
-    authorDisplayName: "Author Devon Rios",
-    createdAt: "2026-07-28T12:00:00.000Z",
-    updatedAt: "2026-08-09T09:00:00.000Z",
-    reactionCount: 7,
-    commentCount: 0,
-    isBookmarked: true,
-    markdownContent: SAMPLE_MARKDOWN,
-    useCaseName: "Code review",
-    compatibleTools: ["Tool agnostic", "C#", ".NET", "style", "conventions"],
-    version: "2026.Q2",
-    authorId: "user-1",
-    authorAvatarUrl: undefined,
-    viewCount: 501,
-    isFollowing: false,
-  };
-}
+const markdownComponents: Components = {
+  h1: ({ children, ...props }) => (
+    <h1 className="mt-4 mb-3 text-3xl font-bold tracking-tight text-text first:mt-0" {...props}>
+      {children}
+    </h1>
+  ),
+  h2: ({ children, ...props }) => (
+    <h2 className="mt-4 mb-2 text-2xl font-semibold tracking-tight text-text" {...props}>
+      {children}
+    </h2>
+  ),
+  h3: ({ children, ...props }) => (
+    <h3 className="mt-3 mb-2 text-xl font-semibold text-text" {...props}>
+      {children}
+    </h3>
+  ),
+  h4: ({ children, ...props }) => (
+    <h4 className="mt-3 mb-1 text-lg font-semibold text-text" {...props}>
+      {children}
+    </h4>
+  ),
+  p: ({ children, ...props }) => (
+    <p className="mb-3 text-sm leading-7 text-text" {...props}>
+      {children}
+    </p>
+  ),
+  ul: ({ children, ...props }) => (
+    <ul className="mb-3 list-disc space-y-1 pl-5 text-sm text-text" {...props}>
+      {children}
+    </ul>
+  ),
+  ol: ({ children, ...props }) => (
+    <ol className="mb-3 list-decimal space-y-1 pl-5 text-sm text-text" {...props}>
+      {children}
+    </ol>
+  ),
+  li: ({ children, ...props }) => (
+    <li className="leading-7" {...props}>
+      {children}
+    </li>
+  ),
+  code: ({ children, ...props }) => (
+    <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.9em] text-text" {...props}>
+      {children}
+    </code>
+  )
+};
 
 export function AssetDetailsPage() {
   const { assetId } = useParams<{ assetId: string }>();
-  const asset = useMemo(() => createPageAsset(assetId ?? "preview-asset"), [assetId]);
+  const { data: asset, isLoading, isError } = useAssetDetails(assetId);
 
   const [primaryTab, setPrimaryTab] = useState<PrimaryTab>("overview");
   const [markdownTab, setMarkdownTab] = useState<MarkdownTab>("rendered");
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
-  const [isSaved, setIsSaved] = useState(asset.isBookmarked);
+  const [isSaved, setIsSaved] = useState(false);
 
-  const likeCount = asset.reactionCount + (isLiked ? 1 : 0);
+  useEffect(() => {
+    setIsSaved(asset?.isBookmarked ?? false);
+  }, [asset?.isBookmarked]);
+
+  const likeCount = (asset?.reactionCount ?? 0) + (isLiked ? 1 : 0);
+  const dislikeCount = (asset?.dislikeCount ?? 0) + (isDisliked ? 1 : 0);
+
+  if (isLoading) {
+    return (
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 text-text sm:px-6 lg:px-8">
+        <section className="rounded-2xl border border-secondary/30 bg-background p-4 shadow-sm sm:p-6">
+          <p className="text-sm text-text/70">Loading asset details...</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (isError || !asset) {
+    return (
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 text-text sm:px-6 lg:px-8">
+        <section className="rounded-2xl border border-secondary/30 bg-background p-4 shadow-sm sm:p-6">
+          <p className="text-sm text-destructive">Could not load this asset. Please try again later.</p>
+        </section>
+      </main>
+    );
+  }
 
   const handleCopyMarkdown = async () => {
     try {
       await navigator.clipboard.writeText(asset.markdownContent);
+      toast.success("markdown copied ");
     } catch {
       // Clipboard may be blocked in some browsers; the action is best effort.
     }
@@ -147,7 +172,7 @@ export function AssetDetailsPage() {
 
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-text/60">
           <span>{asset.authorDisplayName}</span>
-          <span>Updated about 2 months ago</span>
+          <span>Updated {new Date(asset.updatedAt).toLocaleDateString()}</span>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -158,9 +183,15 @@ export function AssetDetailsPage() {
           ))}
         </div>
 
-        <div className="mt-4 inline-flex w-24 flex-col items-center rounded-xl border border-secondary/30 bg-primary/10 p-2 text-center">
-          <span className="text-xl font-semibold text-primary">+{likeCount}</span>
-          <span className="text-[11px] text-text/60">{isDisliked ? "not useful" : "helpful"}</span>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <div className="inline-flex w-24 flex-col items-center rounded-xl border border-secondary/30 bg-primary/10 p-2 text-center">
+            <span className="text-xl font-semibold text-primary">+{likeCount}</span>
+            <span className="text-[11px] text-text/60">helpful</span>
+          </div>
+          <div className="inline-flex w-24 flex-col items-center rounded-xl border border-secondary/30 bg-secondary/20 p-2 text-center">
+            <span className="text-xl font-semibold text-text">-{dislikeCount}</span>
+            <span className="text-[11px] text-text/60">not useful</span>
+          </div>
         </div>
 
         <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-secondary/30 pt-4">
@@ -296,8 +327,8 @@ export function AssetDetailsPage() {
             </div>
 
             {markdownTab === "rendered" ? (
-              <article className="prose max-w-none prose-headings:text-text prose-p:text-text prose-li:text-text prose-strong:text-text">
-                <ReactMarkdown>{asset.markdownContent}</ReactMarkdown>
+              <article className="max-w-none">
+                <ReactMarkdown components={markdownComponents}>{asset.markdownContent}</ReactMarkdown>
               </article>
             ) : (
               <pre className="overflow-x-auto rounded-lg border border-secondary/30 bg-white p-4 text-xs leading-6 text-text">

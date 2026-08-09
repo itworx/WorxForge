@@ -104,7 +104,7 @@ export interface IClient {
     /**
      * @return OK
      */
-    assetsGET2(assetId: string, signal?: AbortSignal): Promise<void>;
+    assetsGET2(assetId: string, signal?: AbortSignal): Promise<AssetDetailsDto>;
 
     /**
      * @return OK
@@ -1009,7 +1009,7 @@ export class Client implements IClient {
     /**
      * @return OK
      */
-    assetsGET2(assetId: string, signal?: AbortSignal): Promise<void> {
+    assetsGET2(assetId: string, signal?: AbortSignal): Promise<AssetDetailsDto> {
         let url_ = this.baseUrl + "/api/assets/{assetId}";
         if (assetId === undefined || assetId === null)
             throw new globalThis.Error("The parameter 'assetId' must be defined.");
@@ -1028,19 +1028,25 @@ export class Client implements IClient {
         });
     }
 
-    protected processAssetsGET2(response: Response): Promise<void> {
+    protected processAssetsGET2(response: Response): Promise<AssetDetailsDto> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AssetDetailsDto;
+            return result200;
+            });
+        } else if (status === 404) {
+            return response.text().then((_responseText) => {
+            return throwException("Not Found", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<AssetDetailsDto>(null as any);
     }
 
     /**
@@ -2582,8 +2588,20 @@ export interface AssetSummaryDto {
     createdAt?: string;
     updatedAt?: string;
     reactionCount?: number;
+    dislikeCount?: number;
     commentCount?: number;
     isBookmarked?: boolean;
+}
+
+export interface AssetDetailsDto extends AssetSummaryDto {
+    markdownContent?: string | undefined;
+    useCaseName?: string | undefined;
+    compatibleTools?: string[] | undefined;
+    version?: string | undefined;
+    authorId?: string;
+    authorAvatarUrl?: string | undefined;
+    viewCount?: number;
+    isFollowing?: boolean;
 }
 
 export interface AssetSummaryDtoPagedResultDto {

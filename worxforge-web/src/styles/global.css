@@ -221,6 +221,12 @@
 }
 
 @layer components {
+  [data-sonner-toast] [data-close-button] {
+    left: auto !important;
+    right: -6px !important;
+    margin-right: 0 !important;
+  }
+
   .wf-sidebar-item-enter {
     animation: wf-sidebar-reveal 420ms ease-out forwards;
   }
