@@ -1,4 +1,6 @@
-﻿const ACCESS_TOKEN_STORAGE_KEY = "worxforge.access-token";
+import { getUserIdFromToken } from "../utils/jwt.utils";
+
+const ACCESS_TOKEN_STORAGE_KEY = "worxforge.access-token";
 
 export function getAccessToken(): string | null {
   try {
@@ -34,4 +36,10 @@ export function clearAccessToken(): void {
   } catch {
     // Ignore storage failures in restricted browser contexts.
   }
+}
+
+/** Derives the current user id from the "sub" claim of the access token, if any. */
+export function getCurrentUserId(): string | null {
+  const token = getAccessToken();
+  return token ? getUserIdFromToken(token) : null;
 }

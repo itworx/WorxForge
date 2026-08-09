@@ -9,6 +9,7 @@
   createdAt: string;
   updatedAt: string;
   reactionCount: number;
+  dislikeCount: number;
   commentCount: number;
   isBookmarked: boolean;
 }

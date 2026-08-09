@@ -1,6 +1,32 @@
-﻿import { ApiException, Client, type CreateAssetRequest, type LookupItemDto, type UpdateAssetRequest } from "../../../api/worxforgeClient";
+import { ApiException, Client, type AssetDetailsDto, type CreateAssetRequest, type LookupItemDto, type UpdateAssetRequest } from "../../../api/worxforgeClient";
 import { createDevAuthenticatedFetch } from "../../../api/httpClient";
 import type { AssetDetails, AssetSummary } from "../models/assets.models";
+
+function mapDtoToAssetDetails(dto: AssetDetailsDto): AssetDetails {
+  return {
+    assetId: dto.assetId ?? "",
+    title: dto.title ?? "",
+    description: dto.description,
+    assetTypeName: dto.assetTypeName ?? "",
+    domainName: dto.domainName ?? "",
+    tools: dto.tools ?? [],
+    authorDisplayName: dto.authorDisplayName ?? "",
+    createdAt: dto.createdAt ?? "",
+    updatedAt: dto.updatedAt ?? "",
+    reactionCount: dto.reactionCount ?? 0,
+    dislikeCount: dto.dislikeCount ?? 0,
+    commentCount: dto.commentCount ?? 0,
+    isBookmarked: dto.isBookmarked ?? false,
+    markdownContent: dto.markdownContent ?? "",
+    useCaseName: dto.useCaseName ?? "",
+    compatibleTools: dto.compatibleTools ?? [],
+    version: dto.version,
+    authorId: dto.authorId ?? "",
+    authorAvatarUrl: dto.authorAvatarUrl,
+    viewCount: dto.viewCount ?? 0,
+    isFollowing: dto.isFollowing ?? false
+  };
+}
 
 export interface LookupItem {
   id: string;
@@ -28,6 +54,7 @@ export interface AssetEditorData {
 }
 
 export interface AssetsService {
+  getAssetDetails(assetId: string, signal?: AbortSignal): Promise<AssetDetails>;
   getEditorLookups(signal?: AbortSignal): Promise<AssetEditorLookups>;
   getAssetForEdit(assetId: string, lookups: AssetEditorLookups, signal?: AbortSignal): Promise<AssetEditorData>;
   uploadMarkdown(file: File, signal?: AbortSignal): Promise<string>;
@@ -118,6 +145,7 @@ function toPreviewSummary(source: UnknownRecord): AssetSummary {
     createdAt: toStringValue(source.createdAt) || new Date().toISOString(),
     updatedAt: toStringValue(source.updatedAt) || new Date().toISOString(),
     reactionCount: typeof source.reactionCount === "number" ? source.reactionCount : 0,
+    dislikeCount: 0,
     commentCount: typeof source.commentCount === "number" ? source.commentCount : 0,
     isBookmarked: typeof source.isBookmarked === "boolean" ? source.isBookmarked : false
   };
@@ -235,6 +263,7 @@ async function fetchLookupItems(
 function toAssetDetails(details: AssetEditorData): AssetDetails {
   return {
     ...details.preview,
+    dislikeCount: 0,
     markdownContent: details.markdownContent,
     useCaseName: details.useCaseId,
     compatibleTools: details.preview.tools,
@@ -249,6 +278,11 @@ export function createAssetsService(baseUrl: string = import.meta.env.VITE_API_B
   const client = new Client(normalizedBaseUrl, createDevAuthenticatedFetch());
 
   return {
+    async getAssetDetails(assetId, signal) {
+      const dto = await client.assetsGET2(assetId, signal);
+      return mapDtoToAssetDetails(dto);
+    },
+
     async getEditorLookups(signal) {
       const [assetTypes, domains, useCases, tools] = await Promise.all([
         fetchLookupItems(normalizedBaseUrl, "/api/assets/types", "asset types", signal),

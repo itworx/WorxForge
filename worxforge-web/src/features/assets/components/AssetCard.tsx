@@ -20,7 +20,7 @@ export function AssetCard({ asset, onToggleBookmark, className = "", showOpenAss
   return (
     <article
       aria-labelledby={titleId}
-      className={`flex h-full flex-col gap-2 rounded-xl border border-secondary/30 bg-background p-4 shadow-sm transition-all hover:border-primary hover:shadow-md ${className}`}
+      className={`flex h-full w-full max-w-xs flex-col gap-2 rounded-xl border border-secondary/30 bg-background p-4 shadow-sm transition-all hover:border-primary hover:shadow-md ${className}`}
     >
       <header className="flex items-start justify-between gap-1.5">
         <AssetBadge label={asset.assetTypeName} variant="primary" />

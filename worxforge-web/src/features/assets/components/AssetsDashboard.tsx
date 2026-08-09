@@ -14,7 +14,7 @@ export function AssetsDashboard({ assets, onToggleBookmark, className = "" }: As
 
   return (
     <div
-      className={`grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 ${className}`}
+      className={`grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 ${className}`}
     >
       {assets.map((asset) => (
         <AssetCard key={asset.assetId} asset={asset} onToggleBookmark={onToggleBookmark} />

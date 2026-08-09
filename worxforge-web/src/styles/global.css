@@ -297,9 +297,10 @@
 }
 
 @layer components {
-  [data-sonner-toast] [data-close-button="true"] {
+  [data-sonner-toast] [data-close-button] {
     left: auto !important;
     right: 10px !important;
+    margin-right: 0 !important;
   }
 
   .wf-sidebar-item-enter {
