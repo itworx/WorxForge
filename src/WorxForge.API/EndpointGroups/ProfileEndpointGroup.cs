@@ -77,7 +77,7 @@ public static class ProfileEndpointGroup
         Guid userId,
         int? page,
         int? pageSize,
-        IQueryHandler<GetUserAssetsQuery, PagedResultDto<MyAssetDto>> handler,
+        IQueryHandler<GetUserAssetsQuery, PagedResultDto<AssetSummaryDto>> handler,
         CancellationToken cancellationToken)
     {
         var query = new GetUserAssetsQuery
