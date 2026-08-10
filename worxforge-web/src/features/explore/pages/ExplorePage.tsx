@@ -1,9 +1,12 @@
 ﻿import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { SlidersHorizontal } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { SearchBar } from "../../../components/SearchBar";
 import { Pagination } from "../../../components/Pagination";
 import { AssetsDashboard } from "../../assets/components/AssetsDashboard";
+import { useBookmark } from "../../assets/hooks/useBookmark";
 import { useExploreFilters, useExploreAssets } from "../hooks/useExplore";
 import { ExploreFiltersBar, type ExploreFilterValues } from "../components/ExploreFiltersBar";
 import type { AssetFreshness, AssetSearchRequest, ExploreSortBy } from "../models/explore.models";
@@ -28,6 +31,36 @@ export function ExplorePage() {
   const [page, setPage] = useState(1);
 
   const { data: filters, isLoading: isLoadingFilters } = useExploreFilters();
+
+  const queryClient = useQueryClient();
+  const { mutate: toggleBookmark } = useBookmark();
+
+  function handleToggleBookmark(assetId: string, bookmark: boolean) {
+    // Optimistically update all cached explore result pages.
+    queryClient.setQueriesData<{ items: { assetId: string; isBookmarked: boolean }[] }>(
+      { queryKey: ["explore", "assets"] },
+      (old) =>
+        old
+          ? { ...old, items: old.items.map((a) => (a.assetId === assetId ? { ...a, isBookmarked: bookmark } : a)) }
+          : old
+    );
+    toggleBookmark(
+      { assetId, bookmark },
+      {
+        onError: () => {
+          // Revert the optimistic update.
+          queryClient.setQueriesData<{ items: { assetId: string; isBookmarked: boolean }[] }>(
+            { queryKey: ["explore", "assets"] },
+            (old) =>
+              old
+                ? { ...old, items: old.items.map((a) => (a.assetId === assetId ? { ...a, isBookmarked: !bookmark } : a)) }
+                : old
+          );
+          toast.error("Failed to update bookmark. Please try again.");
+        }
+      }
+    );
+  }
 
   const request = useMemo<AssetSearchRequest>(
     () => ({
@@ -99,7 +132,7 @@ export function ExplorePage() {
           ))}
         </div>
       ) : (
-        <AssetsDashboard assets={data?.items ?? []} className={isFetching ? "opacity-60" : undefined} />
+        <AssetsDashboard assets={data?.items ?? []} onToggleBookmark={handleToggleBookmark} className={isFetching ? "opacity-60" : undefined} />
       )}
 
       <Pagination

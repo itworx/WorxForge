@@ -1,8 +1,9 @@
 import type { RefObject } from "react";
-import { useId } from "react";
-import { X } from "lucide-react";
+import { useId, useState } from "react";
+import { LogOut, X } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { APP_NAME } from "../constants/app.constants";
+import { useAuthContext } from "../contexts/AuthContext";
 import { useNotificationContext } from "../contexts/NotificationContext";
 import { cn } from "../lib/utils";
 import { navigationItems, type NavigationItem } from "../navigation/navigation.config";
@@ -131,6 +132,8 @@ export function AppSidebar({
   onNavigate
 }: AppSidebarProps) {
   const { unreadCount } = useNotificationContext();
+  const { signOut } = useAuthContext();
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const primaryLabelId = useId();
   const accountLabelId = useId();
   const isCollapsed = !isMobile && collapsed;
@@ -140,6 +143,21 @@ export function AppSidebar({
   const primaryBaseDelay = 320;
   const accountHeadingDelay = primaryBaseDelay + (primaryNavigationItems.length * 130) + 160;
   const accountBaseDelay = accountHeadingDelay + 130;
+
+  const handleSignOut = async (): Promise<void> => {
+    if (isSigningOut) {
+      return;
+    }
+
+    setIsSigningOut(true);
+
+    try {
+      onCloseMobile?.();
+      await signOut();
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
 
   return (
     <aside
@@ -255,6 +273,43 @@ export function AppSidebar({
                   shouldAnimate={shouldAnimateSequence}
                 />
               ))}
+
+              <button
+                type="button"
+                onClick={() => {
+                  void handleSignOut();
+                }}
+                disabled={isSigningOut}
+                aria-label={isCollapsed ? "Sign out" : undefined}
+                className={cn(
+                  "group relative flex w-full items-center overflow-hidden rounded-lg text-sm transition-[background-color,color,transform] motion-safe:duration-180 motion-safe:ease-out motion-reduce:transition-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar active:scale-[0.98] motion-reduce:active:scale-100",
+                  isCollapsed ? "justify-center gap-0 px-2.5 py-2.5" : "gap-3 px-3 py-2.5",
+                  !isCollapsed && "motion-safe:hover:translate-x-0.5",
+                  shouldAnimateSequence && "wf-sidebar-item-enter motion-safe:opacity-0",
+                  "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                )}
+                style={
+                  shouldAnimateSequence
+                    ? { animationDelay: `${accountBaseDelay + (accountNavigationItems.length * 130)}ms` }
+                    : undefined
+                }
+                title={isCollapsed ? "Sign out" : undefined}
+              >
+                <LogOut
+                  aria-hidden="true"
+                  className="size-[18px] shrink-0 text-sidebar-foreground/70 transition-colors motion-safe:duration-200 motion-safe:ease-in-out motion-reduce:transition-none group-hover:text-current"
+                />
+                <div
+                  className={cn(
+                    "flex min-w-0 items-center justify-between gap-2 overflow-hidden transition-[opacity,max-width,transform] motion-safe:duration-220 motion-safe:ease-out motion-reduce:transition-none",
+                    isCollapsed
+                      ? "max-w-0 flex-none justify-center opacity-0 -translate-y-1 scale-[0.985]"
+                      : "max-w-[12rem] flex-1 opacity-100 translate-y-0 scale-100"
+                  )}
+                >
+                  {!isCollapsed ? <span className="min-w-0 flex-1 truncate font-medium">Sign out</span> : null}
+                </div>
+              </button>
             </nav>
           </section>
         </div>

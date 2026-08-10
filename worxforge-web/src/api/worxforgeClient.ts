@@ -104,7 +104,7 @@ export interface IClient {
     /**
      * @return OK
      */
-    assetsGET2(assetId: string, signal?: AbortSignal): Promise<AssetDetailsDto>;
+    assetsGET2(assetId: string, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
@@ -238,7 +238,7 @@ export interface IClient {
      * @param pageSize (optional) 
      * @return OK
      */
-    saved(page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<void>;
+    saved(page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AssetSummaryDtoPagedResultDto>;
 
     /**
      * @return OK
@@ -1026,7 +1026,7 @@ export class Client implements IClient {
     /**
      * @return OK
      */
-    assetsGET2(assetId: string, signal?: AbortSignal): Promise<AssetDetailsDto> {
+    assetsGET2(assetId: string, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/assets/{assetId}";
         if (assetId === undefined || assetId === null)
             throw new globalThis.Error("The parameter 'assetId' must be defined.");
@@ -1046,7 +1046,7 @@ export class Client implements IClient {
         });
     }
 
-    protected processAssetsGET2(response: Response): Promise<AssetDetailsDto> {
+    protected processAssetsGET2(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -1060,7 +1060,7 @@ export class Client implements IClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<AssetDetailsDto>(null as any);
+        return Promise.resolve<void>(null as any);
     }
 
     /**
@@ -1989,7 +1989,7 @@ export class Client implements IClient {
      * @param pageSize (optional) 
      * @return OK
      */
-    saved(page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<void> {
+    saved(page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AssetSummaryDtoPagedResultDto> {
         let url_ = this.baseUrl + "/api/library/saved?";
         if (page === null)
             throw new globalThis.Error("The parameter 'page' cannot be null.");
@@ -2005,6 +2005,7 @@ export class Client implements IClient {
             method: "GET",
             signal,
             headers: {
+                "Accept": "application/json"
             }
         };
 
@@ -2013,19 +2014,25 @@ export class Client implements IClient {
         });
     }
 
-    protected processSaved(response: Response): Promise<void> {
+    protected processSaved(response: Response): Promise<AssetSummaryDtoPagedResultDto> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            return;
+            let result200: any = null;
+            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AssetSummaryDtoPagedResultDto;
+            return result200;
+            });
+        } else if (status === 401) {
+            return response.text().then((_responseText) => {
+            return throwException("Unauthorized", status, _responseText, _headers);
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<void>(null as any);
+        return Promise.resolve<AssetSummaryDtoPagedResultDto>(null as any);
     }
 
     /**
@@ -2230,7 +2237,6 @@ export class Client implements IClient {
             method: "GET",
             signal,
             headers: {
-                "Accept": "application/json"
             }
         };
 
@@ -2239,7 +2245,7 @@ export class Client implements IClient {
         });
     }
 
-    protected processNotifications(response: Response): Promise<NotificationDtoPagedResultDto> {
+    protected processNotifications(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -2253,7 +2259,7 @@ export class Client implements IClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<NotificationDtoPagedResultDto>(null as any);
+        return Promise.resolve<void>(null as any);
     }
 
     /**
@@ -2267,7 +2273,6 @@ export class Client implements IClient {
             method: "GET",
             signal,
             headers: {
-                "Accept": "application/json"
             }
         };
 
@@ -2276,7 +2281,7 @@ export class Client implements IClient {
         });
     }
 
-    protected processUnreadCount(response: Response): Promise<UnreadCountDto> {
+    protected processUnreadCount(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
@@ -2289,7 +2294,7 @@ export class Client implements IClient {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<UnreadCountDto>(null as any);
+        return Promise.resolve<void>(null as any);
     }
 
     /**
@@ -2687,18 +2692,6 @@ export interface AssetSummaryDto {
     reactionCount?: number;
     commentCount?: number;
     isBookmarked?: boolean;
-}
-
-export interface AssetDetailsDto extends AssetSummaryDto {
-    dislikeCount?: number;
-    markdownContent?: string | undefined;
-    useCaseName?: string | undefined;
-    compatibleTools?: string[] | undefined;
-    version?: string | undefined;
-    authorId?: string;
-    authorAvatarUrl?: string | undefined;
-    viewCount?: number;
-    isFollowing?: boolean;
 }
 
 export interface AssetSummaryDtoPagedResultDto {

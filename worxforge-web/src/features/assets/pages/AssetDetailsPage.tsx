@@ -6,6 +6,7 @@ import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ROUTES } from "../../../constants/routes.constants";
 import { useAssetDetails } from "../hooks/useAssetDetails";
+import { useBookmark } from "../hooks/useBookmark";
 
 type PrimaryTab = "overview" | "discussion";
 type MarkdownTab = "rendered" | "raw";
@@ -67,6 +68,7 @@ export function AssetDetailsPage() {
   const [isLiked, setIsLiked] = useState(false);
   const [isDisliked, setIsDisliked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const { mutate: toggleBookmark, isPending: isBookmarkPending } = useBookmark();
 
   useEffect(() => {
     setIsSaved(asset?.isBookmarked ?? false);
@@ -249,7 +251,22 @@ export function AssetDetailsPage() {
 
           <button
             type="button"
-            onClick={() => setIsSaved((current) => !current)}
+            disabled={isBookmarkPending}
+            onClick={() => {
+              if (!assetId) return;
+              const previous = isSaved;
+              const next = !previous;
+              setIsSaved(next);
+              toggleBookmark(
+                { assetId, bookmark: next },
+                {
+                  onError: () => {
+                    setIsSaved(previous);
+                    toast.error("Failed to update bookmark. Please try again.");
+                  }
+                }
+              );
+            }}
             aria-pressed={isSaved}
             className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
               isSaved
