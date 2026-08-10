@@ -247,9 +247,28 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
             .Join(dbContext.Tags, assetTag => assetTag.TagId, tag => tag.TagId, (assetTag, tag) => tag.Name)
             .ToListAsync(cancellationToken);
 
-        var reactionCount = await dbContext.Reactions
+        var reactionCounts = await dbContext.Reactions
+    .AsNoTracking()
+    .Where(reaction => reaction.AssetId == asset.AssetId)
+    .GroupBy(reaction => reaction.ReactionType)
+    .Select(group => new { ReactionType = group.Key, Count = group.Count() })
+    .ToListAsync(cancellationToken);
+
+        var likeCount = reactionCounts
+            .Where(group => group.ReactionType == ReactionTypes.Like)
+            .Select(group => group.Count)
+            .SingleOrDefault();
+
+        var dislikeCount = reactionCounts
+            .Where(group => group.ReactionType == ReactionTypes.Dislike)
+            .Select(group => group.Count)
+            .SingleOrDefault();
+
+        var currentUserReaction = await dbContext.Reactions
             .AsNoTracking()
-            .CountAsync(reaction => reaction.AssetId == asset.AssetId, cancellationToken);
+            .Where(reaction => reaction.AssetId == asset.AssetId && reaction.UserId == requestingUserId)
+            .Select(reaction => (string?)reaction.ReactionType)
+            .SingleOrDefaultAsync(cancellationToken);
 
         var commentCount = await dbContext.Comments
             .AsNoTracking()
@@ -281,7 +300,9 @@ public sealed class AssetRepository(WorxForgeDbContext dbContext) : IAssetReposi
             AuthorAvatarUrl = author?.AvatarUrl,
             CreatedAt = asset.CreatedAt,
             UpdatedAt = asset.UpdatedAt,
-            ReactionCount = reactionCount,
+            LikeCount = likeCount,
+            DislikeCount = dislikeCount,
+            CurrentUserReaction = currentUserReaction,
             CommentCount = commentCount,
             ViewCount = viewCount,
             IsBookmarked = isBookmarked

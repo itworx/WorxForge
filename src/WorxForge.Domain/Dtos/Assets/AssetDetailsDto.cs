@@ -17,9 +17,11 @@ public sealed class AssetDetailsDto
     public string? AuthorAvatarUrl { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime UpdatedAt { get; init; }
-    public int ReactionCount { get; init; }
     public int CommentCount { get; init; }
     public int ViewCount { get; init; }
     public bool IsBookmarked { get; init; }
+    public int LikeCount { get; init; }
+    public int DislikeCount { get; init; }
+    public string? CurrentUserReaction { get; init; }
 }
 
