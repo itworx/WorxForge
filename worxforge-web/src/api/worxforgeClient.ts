@@ -238,7 +238,7 @@ export interface IClient {
      * @param pageSize (optional) 
      * @return OK
      */
-    saved(page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AssetSummaryDtoPagedResultDto>;
+    saved(page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<void>;
 
     /**
      * @return OK
@@ -1986,7 +1986,7 @@ export class Client implements IClient {
      * @param pageSize (optional) 
      * @return OK
      */
-    saved(page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<AssetSummaryDtoPagedResultDto> {
+    saved(page: number | undefined, pageSize: number | undefined, signal?: AbortSignal): Promise<void> {
         let url_ = this.baseUrl + "/api/library/saved?";
         if (page === null)
             throw new globalThis.Error("The parameter 'page' cannot be null.");
@@ -2002,7 +2002,6 @@ export class Client implements IClient {
             method: "GET",
             signal,
             headers: {
-                "Accept": "application/json"
             }
         };
 
@@ -2011,25 +2010,19 @@ export class Client implements IClient {
         });
     }
 
-    protected processSaved(response: Response): Promise<AssetSummaryDtoPagedResultDto> {
+    protected processSaved(response: Response): Promise<void> {
         const status = response.status;
         let _headers: any = {}; if (response.headers && response.headers.forEach) { response.headers.forEach((v: any, k: any) => _headers[k] = v); };
         if (status === 200) {
             return response.text().then((_responseText) => {
-            let result200: any = null;
-            result200 = _responseText === "" ? null : JSON.parse(_responseText, this.jsonParseReviver) as AssetSummaryDtoPagedResultDto;
-            return result200;
-            });
-        } else if (status === 401) {
-            return response.text().then((_responseText) => {
-            return throwException("Unauthorized", status, _responseText, _headers);
+            return;
             });
         } else if (status !== 200 && status !== 204) {
             return response.text().then((_responseText) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
             });
         }
-        return Promise.resolve<AssetSummaryDtoPagedResultDto>(null as any);
+        return Promise.resolve<void>(null as any);
     }
 
     /**

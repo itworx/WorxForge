@@ -79,9 +79,10 @@ export function AssetDetailsPage() {
   }, [asset?.isBookmarked]);
 
   useEffect(() => {
-    setLikeCount(asset?.reactionCount ?? 0);
+    setLikeCount(asset?.likeCount ?? 0);
     setDislikeCount(asset?.dislikeCount ?? 0);
-  }, [asset?.reactionCount, asset?.dislikeCount]);
+    setUserReaction((asset?.currentUserReaction as ReactionType | null) ?? null);
+  }, [asset?.likeCount, asset?.dislikeCount, asset?.currentUserReaction]);
 
   if (isLoading) {
     return (
@@ -240,11 +241,10 @@ export function AssetDetailsPage() {
             type="button"
             onClick={() => handleReactionClick("Like")}
             aria-pressed={userReaction === "Like"}
-            className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-              userReaction === "Like"
+            className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${userReaction === "Like"
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-secondary/30 bg-white text-text hover:bg-primary/10"
-            }`}
+              }`}
           >
             <FaRegThumbsUp className="size-3.5" aria-hidden="true" />
             Like
@@ -254,11 +254,10 @@ export function AssetDetailsPage() {
             type="button"
             onClick={() => handleReactionClick("Dislike")}
             aria-pressed={userReaction === "Dislike"}
-            className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                  userReaction === "Dislike"
+            className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${userReaction === "Dislike"
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-secondary/30 bg-white text-text hover:bg-primary/10"
-            }`}
+              }`}
           >
             <FaRegThumbsDown className="size-3.5" aria-hidden="true" />
             Dislike
@@ -301,11 +300,10 @@ export function AssetDetailsPage() {
               );
             }}
             aria-pressed={isSaved}
-            className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-              isSaved
+            className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${isSaved
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-secondary/30 bg-white text-text hover:bg-primary/10"
-            }`}
+              }`}
           >
             {isSaved ? "Saved" : "Save"}
           </button>
@@ -337,22 +335,20 @@ export function AssetDetailsPage() {
             <button
               type="button"
               onClick={() => setPrimaryTab("overview")}
-              className={`rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-                primaryTab === "overview"
+              className={`rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors ${primaryTab === "overview"
                   ? "border-primary text-primary"
                   : "border-transparent text-text/70 hover:text-text"
-              }`}
+                }`}
             >
               Overview
             </button>
             <button
               type="button"
               onClick={() => setPrimaryTab("discussion")}
-              className={`rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-                primaryTab === "discussion"
+              className={`rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors ${primaryTab === "discussion"
                   ? "border-primary text-primary"
                   : "border-transparent text-text/70 hover:text-text"
-              }`}
+                }`}
             >
               Discussion (0)
             </button>
@@ -365,18 +361,16 @@ export function AssetDetailsPage() {
               <button
                 type="button"
                 onClick={() => setMarkdownTab("rendered")}
-                className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                  markdownTab === "rendered" ? "bg-primary/10 text-primary" : "text-text/70 hover:text-text"
-                }`}
+                className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${markdownTab === "rendered" ? "bg-primary/10 text-primary" : "text-text/70 hover:text-text"
+                  }`}
               >
                 Rendered
               </button>
               <button
                 type="button"
                 onClick={() => setMarkdownTab("raw")}
-                className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                  markdownTab === "raw" ? "bg-primary/10 text-primary" : "text-text/70 hover:text-text"
-                }`}
+                className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${markdownTab === "raw" ? "bg-primary/10 text-primary" : "text-text/70 hover:text-text"
+                  }`}
               >
                 Raw Markdown
               </button>
