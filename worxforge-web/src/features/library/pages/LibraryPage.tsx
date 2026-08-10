@@ -1,6 +1,8 @@
 ﻿import { useState } from "react";
+import { toast } from "sonner";
 import { Pagination } from "../../../components/Pagination";
 import { AssetsDashboard } from "../../assets/components/AssetsDashboard";
+import { useBookmark } from "../../assets/hooks/useBookmark";
 import { useSavedAssets } from "../hooks/useLibrary";
 
 const PAGE_SIZE = 12;
@@ -9,6 +11,18 @@ export function LibraryPage() {
   const [page, setPage] = useState(1);
 
   const { data, isLoading, isFetching, isError } = useSavedAssets({ page, pageSize: PAGE_SIZE });
+  const { mutate: toggleBookmark } = useBookmark();
+
+  function handleToggleBookmark(assetId: string, bookmark: boolean) {
+    toggleBookmark(
+      { assetId, bookmark },
+      {
+        onError: () => {
+          toast.error("Failed to update bookmark. Please try again.");
+        }
+      }
+    );
+  }
 
   const totalCount = data?.totalCount ?? 0;
   const totalPages = totalCount > 0 ? Math.ceil(totalCount / PAGE_SIZE) : 0;
@@ -31,7 +45,7 @@ export function LibraryPage() {
           ))}
         </div>
       ) : (
-        <AssetsDashboard assets={data?.items ?? []} className={isFetching ? "opacity-60" : undefined} />
+        <AssetsDashboard assets={data?.items ?? []} onToggleBookmark={handleToggleBookmark} className={isFetching ? "opacity-60" : undefined} />
       )}
 
       <Pagination

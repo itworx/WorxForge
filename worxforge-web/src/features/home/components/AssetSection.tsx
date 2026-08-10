@@ -8,9 +8,10 @@ interface AssetSectionProps {
   title: string;
   assets: AssetSummary[];
   isLoading?: boolean;
+  onToggleBookmark?: (assetId: string, bookmark: boolean) => void;
 }
 
-export function AssetSection({ title, assets, isLoading = false }: AssetSectionProps) {
+export function AssetSection({ title, assets, isLoading = false, onToggleBookmark }: AssetSectionProps) {
   return (
     <section>
       <div className="mb-3 flex items-center justify-between">
@@ -31,7 +32,7 @@ export function AssetSection({ title, assets, isLoading = false }: AssetSectionP
           ))}
         </div>
       ) : (
-        <AssetsDashboard assets={assets} />
+        <AssetsDashboard assets={assets} onToggleBookmark={onToggleBookmark} />
       )}
     </section>
   );
