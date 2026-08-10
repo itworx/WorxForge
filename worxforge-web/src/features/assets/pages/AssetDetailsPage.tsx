@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ROUTES } from "../../../constants/routes.constants";
 import { useAssetDetails } from "../hooks/useAssetDetails";
 import { useBookmark } from "../hooks/useBookmark";
+import { useAssetReaction, type ReactionType } from "../hooks/useAssetReaction";
 
 type PrimaryTab = "overview" | "discussion";
 type MarkdownTab = "rendered" | "raw";
@@ -63,10 +64,13 @@ export function AssetDetailsPage() {
   const { assetId } = useParams<{ assetId: string }>();
   const { data: asset, isLoading, isError } = useAssetDetails(assetId);
 
+  const [userReaction, setUserReaction] = useState<ReactionType | null>(null);
+  const [likeCount, setLikeCount] = useState(0);
+  const [dislikeCount, setDislikeCount] = useState(0);
+  const { mutate: toggleReaction } = useAssetReaction();
+
   const [primaryTab, setPrimaryTab] = useState<PrimaryTab>("overview");
   const [markdownTab, setMarkdownTab] = useState<MarkdownTab>("rendered");
-  const [isLiked, setIsLiked] = useState(false);
-  const [isDisliked, setIsDisliked] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const { mutate: toggleBookmark, isPending: isBookmarkPending } = useBookmark();
 
@@ -74,8 +78,10 @@ export function AssetDetailsPage() {
     setIsSaved(asset?.isBookmarked ?? false);
   }, [asset?.isBookmarked]);
 
-  const likeCount = (asset?.reactionCount ?? 0) + (isLiked ? 1 : 0);
-  const dislikeCount = (asset?.dislikeCount ?? 0) + (isDisliked ? 1 : 0);
+  useEffect(() => {
+    setLikeCount(asset?.reactionCount ?? 0);
+    setDislikeCount(asset?.dislikeCount ?? 0);
+  }, [asset?.reactionCount, asset?.dislikeCount]);
 
   if (isLoading) {
     return (
@@ -118,24 +124,51 @@ export function AssetDetailsPage() {
     URL.revokeObjectURL(url);
   };
 
-  const handleLike = () => {
-    setIsLiked((current) => {
-      const next = !current;
-      if (next) {
-        setIsDisliked(false);
-      }
-      return next;
-    });
-  };
+  const handleReactionClick = (type: ReactionType) => {
+    if (!assetId) return;
 
-  const handleDislike = () => {
-    setIsDisliked((current) => {
-      const next = !current;
-      if (next) {
-        setIsLiked(false);
+    const previousReaction = userReaction;
+    const previousLikeCount = likeCount;
+    const previousDislikeCount = dislikeCount;
+
+    let nextReaction: ReactionType | null;
+    let nextLikeCount = likeCount;
+    let nextDislikeCount = dislikeCount;
+
+    if (previousReaction === type) {
+      // clicking the active reaction again un-reacts (matches API toggle-off)
+      nextReaction = null;
+      if (type === "Like") {
+        nextLikeCount -= 1;
+      } else {
+        nextDislikeCount -= 1;
       }
-      return next;
-    });
+    } else {
+      nextReaction = type;
+      if (type === "Like") {
+        nextLikeCount += 1;
+        if (previousReaction === "Dislike") nextDislikeCount -= 1;
+      } else {
+        nextDislikeCount += 1;
+        if (previousReaction === "Like") nextLikeCount -= 1;
+      }
+    }
+
+    setUserReaction(nextReaction);
+    setLikeCount(nextLikeCount);
+    setDislikeCount(nextDislikeCount);
+
+    toggleReaction(
+      { assetId, reactionType: type },
+      {
+        onError: () => {
+          setUserReaction(previousReaction);
+          setLikeCount(previousLikeCount);
+          setDislikeCount(previousDislikeCount);
+          toast.error("Failed to update reaction. Please try again.");
+        }
+      }
+    );
   };
 
   const handleShare = async () => {
@@ -205,10 +238,10 @@ export function AssetDetailsPage() {
         <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-secondary/30 pt-4">
           <button
             type="button"
-            onClick={handleLike}
-            aria-pressed={isLiked}
+            onClick={() => handleReactionClick("Like")}
+            aria-pressed={userReaction === "Like"}
             className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-              isLiked
+              userReaction === "Like"
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-secondary/30 bg-white text-text hover:bg-primary/10"
             }`}
@@ -219,10 +252,10 @@ export function AssetDetailsPage() {
 
           <button
             type="button"
-            onClick={handleDislike}
-            aria-pressed={isDisliked}
+            onClick={() => handleReactionClick("Dislike")}
+            aria-pressed={userReaction === "Dislike"}
             className={`inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-              isDisliked
+                  userReaction === "Dislike"
                 ? "border-primary bg-primary/10 text-primary"
                 : "border-secondary/30 bg-white text-text hover:bg-primary/10"
             }`}
