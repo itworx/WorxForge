@@ -105,16 +105,21 @@ public sealed class CommentRepository(WorxForgeDbContext dbContext) : ICommentRe
 
     private async Task<List<CommentRow>> LoadRowsAsync(IQueryable<Comment> comments, CancellationToken cancellationToken) =>
         await comments
-            .Join(dbContext.Users.AsNoTracking(), comment => comment.UserId, user => user.UserId, (comment, user) => new CommentRow(
-                comment.CommentId,
-                comment.AssetId,
-                comment.ParentCommentId,
-                user.DisplayName,
-                user.AvatarUrl,
-                comment.Content,
-                comment.CreatedAt))
-            .OrderBy(row => row.CreatedAt)
-            .ThenBy(row => row.CommentId)
+            .Join(
+                dbContext.Users.AsNoTracking(),
+                comment => comment.UserId,
+                user => user.UserId,
+                (comment, user) => new { comment, user })
+            .OrderBy(joined => joined.comment.CreatedAt)
+            .ThenBy(joined => joined.comment.CommentId)
+            .Select(joined => new CommentRow(
+                joined.comment.CommentId,
+                joined.comment.AssetId,
+                joined.comment.ParentCommentId,
+                joined.user.DisplayName,
+                joined.user.AvatarUrl,
+                joined.comment.Content,
+                joined.comment.CreatedAt))
             .ToListAsync(cancellationToken);
 
     private static (IReadOnlyList<AssetCommentDto> Items, int Total) BuildPagedThread(IReadOnlyList<CommentRow> rows, int page, int pageSize)
