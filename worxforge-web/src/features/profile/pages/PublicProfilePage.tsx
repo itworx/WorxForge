@@ -1,6 +1,10 @@
-﻿import { useParams } from "react-router-dom";
+﻿import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { Pagination } from "../../../components/Pagination";
 import { AssetsDashboard } from "../../assets/components/AssetsDashboard";
-import { usePublicProfile } from "../hooks/useProfile";
+import { usePublicProfile, usePublicProfileAssets } from "../hooks/useProfile";
+
+const PAGE_SIZE = 12;
 
 function getInitials(displayName: string): string {
   return displayName
@@ -13,7 +17,18 @@ function getInitials(displayName: string): string {
 
 export function PublicProfilePage() {
   const { userId } = useParams<{ userId: string }>();
+  const [page, setPage] = useState(1);
   const { data: profile, isLoading, isError } = usePublicProfile(userId);
+  const {
+    data: publicAssets,
+    isLoading: isAssetsLoading,
+    isFetching: isAssetsFetching,
+    isError: isAssetsError
+  } = usePublicProfileAssets(userId, page, PAGE_SIZE);
+
+  useEffect(() => {
+    setPage(1);
+  }, [userId]);
 
   if (isLoading) {
     return (
@@ -32,6 +47,9 @@ export function PublicProfilePage() {
       </div>
     );
   }
+
+  const totalPages = (publicAssets?.totalCount ?? 0) > 0 ? Math.ceil((publicAssets?.totalCount ?? 0) / PAGE_SIZE) : 0;
+  const publishedAssetsCount = publicAssets?.totalCount ?? profile.statistics.totalPublishedAssets;
 
   return (
     <div className="mx-auto flex flex-col gap-6 px-4 py-10 sm:px-6 lg:py-14">
@@ -54,7 +72,7 @@ export function PublicProfilePage() {
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-xl border border-secondary/30 bg-white p-4">
             <p className="text-xs text-muted-foreground">Published assets</p>
-            <p className="mt-1 text-2xl font-semibold text-text">{profile.statistics.totalPublishedAssets}</p>
+            <p className="mt-1 text-2xl font-semibold text-text">{publishedAssetsCount}</p>
           </div>
           <div className="rounded-xl border border-secondary/30 bg-white p-4">
             <p className="text-xs text-muted-foreground">Followers</p>
@@ -71,7 +89,28 @@ export function PublicProfilePage() {
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Published assets</h2>
         </div>
-        <AssetsDashboard assets={profile.publishedAssets} />
+
+        {isAssetsError && (
+          <p className="mb-4 text-sm text-destructive">Could not load this user's assets. Please try again later.</p>
+        )}
+
+        {isAssetsLoading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div key={index} className="h-52 animate-pulse rounded-xl border border-secondary/30 bg-secondary/10" />
+            ))}
+          </div>
+        ) : (
+          <AssetsDashboard assets={publicAssets?.items ?? []} className={isAssetsFetching ? "opacity-60" : undefined} />
+        )}
+
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          hasNextPage={publicAssets?.hasNextPage ?? false}
+          onPageChange={setPage}
+          className="pt-4"
+        />
       </section>
     </div>
   );

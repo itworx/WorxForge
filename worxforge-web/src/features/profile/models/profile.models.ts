@@ -21,6 +21,14 @@ export interface PublicProfile {
   statistics: ProfileStatistics;
 }
 
+export interface PublicProfileAssetsPage {
+  items: AssetSummary[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  hasNextPage: boolean;
+}
+
 export interface ProfileStatistics {
   totalPublishedAssets: number;
   totalFollowers: number;

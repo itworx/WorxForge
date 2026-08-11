@@ -1,6 +1,6 @@
 ﻿import { createDevAuthenticatedFetch } from "../../../api/httpClient";
 import type { AssetSummary } from "../../assets/models/assets.models";
-import type { MyProfile, ProfileStatistics, PublicProfile } from "../models/profile.models";
+import type { MyProfile, ProfileStatistics, PublicProfile, PublicProfileAssetsPage } from "../models/profile.models";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -76,6 +76,7 @@ function toStatistics(payload: UnknownRecord, assets: AssetSummary[], followerCo
 export interface ProfileService {
   getMyProfile(signal?: AbortSignal): Promise<MyProfile>;
   getPublicProfile(userId: string, signal?: AbortSignal): Promise<PublicProfile>;
+  getPublicProfileAssets(userId: string, page: number, pageSize: number, signal?: AbortSignal): Promise<PublicProfileAssetsPage>;
 }
 
 export function createProfileService(baseUrl: string = import.meta.env.VITE_API_BASE_URL): ProfileService {
@@ -138,6 +139,34 @@ export function createProfileService(baseUrl: string = import.meta.env.VITE_API_
         publishedAssets,
         followerCount,
         statistics: toStatistics(payload, publishedAssets, followerCount)
+      };
+    },
+
+    async getPublicProfileAssets(userId, page, pageSize, signal) {
+      const safePage = Math.max(1, page);
+      const safePageSize = Math.max(1, pageSize);
+      const payload = asRecord(
+        await requestJson(
+          `/api/profile/${encodeURIComponent(userId)}/assets?page=${safePage}&pageSize=${safePageSize}`,
+          signal
+        )
+      );
+
+      const items = extractAssets(payload);
+      const resolvedPage = asNumber(payload.page) || safePage;
+      const resolvedPageSize = asNumber(payload.pageSize) || safePageSize;
+      const resolvedTotalCount = asNumber(payload.totalCount) || items.length;
+      const resolvedHasNextPage =
+        typeof payload.hasNextPage === "boolean"
+          ? payload.hasNextPage
+          : resolvedPage * resolvedPageSize < resolvedTotalCount;
+
+      return {
+        items,
+        page: resolvedPage,
+        pageSize: resolvedPageSize,
+        totalCount: resolvedTotalCount,
+        hasNextPage: resolvedHasNextPage
       };
     }
   };

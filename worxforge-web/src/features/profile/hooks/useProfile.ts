@@ -18,4 +18,12 @@ export function usePublicProfile(userId?: string) {
   });
 }
 
+export function usePublicProfileAssets(userId: string | undefined, page: number, pageSize: number) {
+  return useQuery({
+    queryKey: ["profile", "public", "assets", userId, page, pageSize],
+    enabled: Boolean(userId),
+    queryFn: ({ signal }) => profileService.getPublicProfileAssets(userId as string, page, pageSize, signal)
+  });
+}
+
 
