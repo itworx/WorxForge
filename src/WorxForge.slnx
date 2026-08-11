@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/Tests/" />
+  <Folder Name="/Tests/IntegrationTests/">
+    <Project Path="Tests/IntegrationTests/WorxForge.Infrastructure.IntegrationTests/WorxForge.Infrastructure.IntegrationTests.csproj" />
+  </Folder>
+  <Folder Name="/Tests/SystemTests/">
+    <Project Path="Tests/SystemTests/WorxForge.API.SystemTests/WorxForge.API.SystemTests.csproj" />
+    <Project Path="Tests/SystemTests/WorxForge.Infrastructure.SystemTests/WorxForge.Infrastructure.SystemTests.csproj" />
+  </Folder>
+  <Folder Name="/Tests/UnitTests/">
+    <Project Path="Tests/UnitTests/WorxForge.API.UnitTests/WorxForge.API.UnitTests.csproj" />
+    <Project Path="Tests/UnitTests/WorxForge.Core.UnitTests/WorxForge.Core.UnitTests.csproj" />
+    <Project Path="Tests/UnitTests/WorxForge.Domain.UnitTests/WorxForge.Domain.UnitTests.csproj" />
+    <Project Path="Tests/UnitTests/WorxForge.Infrastructure.UnitTests/WorxForge.Infrastructure.UnitTests.csproj" />
+  </Folder>
+  <Project Path="WorxForge.API/WorxForge.API.csproj" />
+  <Project Path="WorxForge.Core/WorxForge.Core.csproj" />
+  <Project Path="WorxForge.Domain/WorxForge.Domain.csproj" />
+  <Project Path="WorxForge.Infrastructure/WorxForge.Infrastructure.csproj" />
+</Solution>

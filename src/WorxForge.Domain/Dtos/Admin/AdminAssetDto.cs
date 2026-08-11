@@ -1,0 +1,13 @@
+﻿namespace WorxForge.Domain.Dtos.Admin;
+
+public sealed class AdminAssetDto
+{
+    public Guid AssetId { get; init; }
+    public string Title { get; init; } = string.Empty;
+    public string AuthorUsername { get; init; } = string.Empty;
+    public string AssetTypeName { get; init; } = string.Empty;
+    public DateTime CreatedAt { get; init; }
+    public int CommentCount { get; init; }
+    public int ReportCount { get; init; }
+}
+

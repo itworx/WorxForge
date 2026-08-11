@@ -1,0 +1,42 @@
+﻿using WorxForge.API.Configuration;
+using WorxForge.API.EndpointGroups;
+using WorxForge.API.Hubs;
+using WorxForge.Domain.Constants;
+
+namespace WorxForge.API.Extensions;
+
+public static class ApplicationBuilderExtensions
+{
+    public static WebApplication UseWorxForgePipeline(this WebApplication app)
+    {
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwagger();
+            app.UseSwaggerUI();
+            app.MapOpenApi();
+        }
+
+        app.UseExceptionHandler();
+        // No HTTPS redirection: deployment currently has no TLS certificate,
+        // so HTTP (including SignalR negotiate/websocket) must work as-is.
+        app.UseCors(CorsConfigurationExtensions.PolicyName);
+        app.UseAuthentication();
+        app.UseAuthorization();
+        return app;
+    }
+
+    public static WebApplication MapWorxForgeEndpoints(this WebApplication app)
+    {
+        app.MapAuthenticationEndpoints();
+        app.MapProfileEndpoints();
+        app.MapSettingsEndpoints();
+        app.MapHomeEndpoints();
+        app.MapExploreEndpoints();
+        app.MapAssetsEndpoints();
+        app.MapLibraryEndpoints();
+        app.MapNotificationsEndpoints();
+        app.MapAdminEndpoints();
+        app.MapHub<NotificationHub>("/hubs/notifications").RequireAuthorization(PolicyConstants.AuthenticatedUser);
+        return app;
+    }
+}
