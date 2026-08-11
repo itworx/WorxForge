@@ -1,7 +1,11 @@
 ﻿import { Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { AssetsDashboard } from "../../assets/components/AssetsDashboard";
+import { useBookmark } from "../../assets/hooks/useBookmark";
 import { ROUTES } from "../../../constants/routes.constants";
 import { useMyProfile } from "../hooks/useProfile";
+import type { MyProfile } from "../models/profile.models";
 
 function getInitials(displayName: string): string {
   return displayName
@@ -14,6 +18,30 @@ function getInitials(displayName: string): string {
 
 export function MyProfilePage() {
   const { data: profile, isLoading, isError } = useMyProfile();
+  const queryClient = useQueryClient();
+  const { mutate: toggleBookmark } = useBookmark();
+
+  function handleToggleBookmark(assetId: string, bookmark: boolean) {
+    // Optimistically update the cached profile so the bookmark icon reflects instantly.
+    queryClient.setQueryData<MyProfile>(["profile", "me"], (old) =>
+      old
+        ? { ...old, publishedAssets: old.publishedAssets.map((a) => (a.assetId === assetId ? { ...a, isBookmarked: bookmark } : a)) }
+        : old
+    );
+    toggleBookmark(
+      { assetId, bookmark },
+      {
+        onError: () => {
+          queryClient.setQueryData<MyProfile>(["profile", "me"], (old) =>
+            old
+              ? { ...old, publishedAssets: old.publishedAssets.map((a) => (a.assetId === assetId ? { ...a, isBookmarked: !bookmark } : a)) }
+              : old
+          );
+          toast.error("Failed to update bookmark. Please try again.");
+        }
+      }
+    );
+  }
 
   if (isLoading) {
     return (
@@ -61,14 +89,10 @@ export function MyProfilePage() {
           </Link>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-secondary/30 bg-white p-4">
             <p className="text-xs text-muted-foreground">Published assets</p>
             <p className="mt-1 text-2xl font-semibold text-text">{profile.statistics.totalPublishedAssets}</p>
-          </div>
-          <div className="rounded-xl border border-secondary/30 bg-white p-4">
-            <p className="text-xs text-muted-foreground">Followers</p>
-            <p className="mt-1 text-2xl font-semibold text-text">{profile.statistics.totalFollowers}</p>
           </div>
           <div className="rounded-xl border border-secondary/30 bg-white p-4">
             <p className="text-xs text-muted-foreground">Reactions received</p>
@@ -81,7 +105,7 @@ export function MyProfilePage() {
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold">My assets</h2>
         </div>
-        <AssetsDashboard assets={profile.publishedAssets} />
+        <AssetsDashboard assets={profile.publishedAssets} onToggleBookmark={handleToggleBookmark} />
       </section>
     </div>
   );

@@ -1,8 +1,12 @@
 ﻿import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Pagination } from "../../../components/Pagination";
 import { AssetsDashboard } from "../../assets/components/AssetsDashboard";
+import { useBookmark } from "../../assets/hooks/useBookmark";
 import { usePublicProfile, usePublicProfileAssets } from "../hooks/useProfile";
+import type { PublicProfileAssetsPage } from "../models/profile.models";
 
 const PAGE_SIZE = 12;
 
@@ -25,6 +29,34 @@ export function PublicProfilePage() {
     isFetching: isAssetsFetching,
     isError: isAssetsError
   } = usePublicProfileAssets(userId, page, PAGE_SIZE);
+  const queryClient = useQueryClient();
+  const { mutate: toggleBookmark } = useBookmark();
+
+  function handleToggleBookmark(assetId: string, bookmark: boolean) {
+    // Optimistically update all cached pages for this profile's assets.
+    queryClient.setQueriesData<PublicProfileAssetsPage>(
+      { queryKey: ["profile", "public", "assets", userId] },
+      (old) =>
+        old
+          ? { ...old, items: old.items.map((a) => (a.assetId === assetId ? { ...a, isBookmarked: bookmark } : a)) }
+          : old
+    );
+    toggleBookmark(
+      { assetId, bookmark },
+      {
+        onError: () => {
+          queryClient.setQueriesData<PublicProfileAssetsPage>(
+            { queryKey: ["profile", "public", "assets", userId] },
+            (old) =>
+              old
+                ? { ...old, items: old.items.map((a) => (a.assetId === assetId ? { ...a, isBookmarked: !bookmark } : a)) }
+                : old
+          );
+          toast.error("Failed to update bookmark. Please try again.");
+        }
+      }
+    );
+  }
 
   useEffect(() => {
     setPage(1);
@@ -65,18 +97,13 @@ export function PublicProfilePage() {
 
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{profile.displayName || "User profile"}</h1>
-            <p className="text-sm text-muted-foreground">{profile.followerCount} followers</p>
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-xl border border-secondary/30 bg-white p-4">
             <p className="text-xs text-muted-foreground">Published assets</p>
             <p className="mt-1 text-2xl font-semibold text-text">{publishedAssetsCount}</p>
-          </div>
-          <div className="rounded-xl border border-secondary/30 bg-white p-4">
-            <p className="text-xs text-muted-foreground">Followers</p>
-            <p className="mt-1 text-2xl font-semibold text-text">{profile.statistics.totalFollowers}</p>
           </div>
           <div className="rounded-xl border border-secondary/30 bg-white p-4">
             <p className="text-xs text-muted-foreground">Reactions received</p>
@@ -101,7 +128,11 @@ export function PublicProfilePage() {
             ))}
           </div>
         ) : (
-          <AssetsDashboard assets={publicAssets?.items ?? []} className={isAssetsFetching ? "opacity-60" : undefined} />
+          <AssetsDashboard
+            assets={publicAssets?.items ?? []}
+            onToggleBookmark={handleToggleBookmark}
+            className={isAssetsFetching ? "opacity-60" : undefined}
+          />
         )}
 
         <Pagination
