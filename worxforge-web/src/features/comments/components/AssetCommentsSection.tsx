@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { AssetCommentDto } from "../../../api/worxforgeClient";
 import { useAuthContext } from "../../../contexts/AuthContext";
 import { formatDate, formatRelativeTime } from "../../../utils/date.utils";
@@ -8,7 +8,7 @@ import { useComments } from "../hooks/useComments";
 
 interface AssetCommentsSectionProps {
   assetId: string;
-  onTotalCountChange?: (totalCount: number) => void;
+  assetAuthorId?: string;
 }
 
 function getDisplayName(comment: AssetCommentDto): string {
@@ -33,7 +33,7 @@ function normalizeIdentity(value: string | undefined): string {
   return (value ?? "").trim().toLowerCase();
 }
 
-export function AssetCommentsSection({ assetId, onTotalCountChange }: AssetCommentsSectionProps) {
+export function AssetCommentsSection({ assetId, assetAuthorId }: AssetCommentsSectionProps) {
   const { isAuthenticated, user } = useAuthContext();
   const {
     comments,
@@ -49,25 +49,37 @@ export function AssetCommentsSection({ assetId, onTotalCountChange }: AssetComme
     deleteComment
   } = useComments(assetId);
 
-  useEffect(() => {
-    onTotalCountChange?.(totalCount);
-  }, [onTotalCountChange, totalCount]);
-
   const [draftComment, setDraftComment] = useState("");
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
   const [replyDraft, setReplyDraft] = useState("");
   const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
   const [editingDraft, setEditingDraft] = useState("");
+  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
 
-  const canManageComment = (comment: AssetCommentDto): boolean => {
-    if (!isAuthenticated || !user) {
-      return false;
-    }
+  const isAssetOwner = Boolean(isAuthenticated && user && assetAuthorId && user.userId === assetAuthorId);
 
+  const canEditComment = (comment: AssetCommentDto): boolean => {
+    if (!isAuthenticated || !user) return false;
     const commentAuthor = normalizeIdentity(comment.authorDisplayName);
     const currentUser = normalizeIdentity(user.displayName);
-
     return commentAuthor.length > 0 && commentAuthor === currentUser;
+  };
+
+  const canDeleteComment = (comment: AssetCommentDto): boolean => {
+    if (!isAuthenticated || !user) return false;
+    return canEditComment(comment) || isAssetOwner;
+  };
+
+  const toggleReplies = (commentId: string) => {
+    setExpandedReplies((prev) => {
+      const next = new Set(prev);
+      if (next.has(commentId)) {
+        next.delete(commentId);
+      } else {
+        next.add(commentId);
+      }
+      return next;
+    });
   };
 
   const rootComments = useMemo(() => comments ?? [], [comments]);
@@ -162,8 +174,10 @@ export function AssetCommentsSection({ assetId, onTotalCountChange }: AssetComme
     const commentId = comment.commentId;
     const displayName = getDisplayName(comment);
     const isEditing = editingCommentId === commentId;
-    const canManage = canManageComment(comment);
+    const canEdit = canEditComment(comment);
+    const canDelete = canDeleteComment(comment);
     const replies = comment.replies ?? [];
+    const repliesExpanded = commentId ? expandedReplies.has(commentId) : false;
 
     return (
       <article
@@ -189,21 +203,22 @@ export function AssetCommentsSection({ assetId, onTotalCountChange }: AssetComme
             </div>
           </div>
 
-          {canManage && commentId ? (
+          {(canEdit || canDelete) && commentId ? (
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                aria-label={`Edit comment by ${displayName}`}
-                className="rounded-md border border-secondary/30 px-2 py-1 text-xs font-medium text-text transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-                onClick={() => {
-                  setEditingCommentId(commentId);
-                  setEditingDraft(comment.content ?? "");
-                }}
-                disabled={updateComment.isPending || deleteComment.isPending}
-              >
-                Edit
-              </button>
-
+              {canEdit ? (
+                <button
+                  type="button"
+                  aria-label={`Edit comment by ${displayName}`}
+                  className="rounded-md border border-secondary/30 px-2 py-1 text-xs font-medium text-text transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                  onClick={() => {
+                    setEditingCommentId(commentId);
+                    setEditingDraft(comment.content ?? "");
+                  }}
+                  disabled={updateComment.isPending || deleteComment.isPending}
+                >
+                  Edit
+                </button>
+              ) : null}
               <button
                 type="button"
                 aria-label={`Delete comment by ${displayName}`}
@@ -304,9 +319,21 @@ export function AssetCommentsSection({ assetId, onTotalCountChange }: AssetComme
           </div>
         ) : null}
 
-        {replies.length > 0 ? (
-          <div className="mt-3 space-y-3 border-l border-secondary/30 pl-3">
-            {replies.map((reply) => renderComment(reply, true))}
+        {replies.length > 0 && commentId ? (
+          <div className="mt-3">
+            <button
+              type="button"
+              className="text-xs font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              onClick={() => toggleReplies(commentId)}
+              aria-expanded={repliesExpanded}
+            >
+              {repliesExpanded ? "Hide replies" : `View ${replies.length} ${replies.length === 1 ? "reply" : "replies"}`}
+            </button>
+            {repliesExpanded ? (
+              <div className="mt-3 space-y-3 border-l border-secondary/30 pl-3">
+                {replies.map((reply) => renderComment(reply, true))}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </article>
