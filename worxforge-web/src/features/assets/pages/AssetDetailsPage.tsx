@@ -1,5 +1,5 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { FaCopy, FaDownload, FaFlag, FaRegThumbsDown, FaRegThumbsUp, FaShareAlt } from "react-icons/fa";
+import { FaCopy, FaDownload, FaRegThumbsDown, FaRegThumbsUp, FaShareAlt } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import { Link, useLocation, useParams } from "react-router-dom";
@@ -344,14 +344,6 @@ export function AssetDetailsPage() {
           >
             <FaShareAlt className="size-3.5" aria-hidden="true" />
             Share link
-          </button>
-
-          <button
-            type="button"
-            className="inline-flex items-center gap-1 rounded-md border border-secondary/30 bg-white px-3 py-1.5 text-xs font-medium text-text transition-colors hover:bg-primary/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-          >
-            <FaFlag className="size-3.5" aria-hidden="true" />
-            Report
           </button>
 
           <span className="ml-auto text-xs text-text/60">{asset.viewCount} views</span>
