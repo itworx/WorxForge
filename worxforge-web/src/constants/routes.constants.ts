@@ -11,7 +11,6 @@
   ASSET: (assetId: string) => `/asset/${assetId}`,
   PROFILE_ME: "/profile/me",
   PROFILE: (userId: string) => `/profile/${userId}`,
-  SETTINGS: "/settings",
   MY_LIBRARY: "/my-library",
   MY_ASSETS: "/my-assets",
   MY_ASSETS_CREATE: "/my-assets/create",

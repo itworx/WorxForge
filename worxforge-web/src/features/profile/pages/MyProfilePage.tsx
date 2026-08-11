@@ -1,9 +1,7 @@
-﻿import { Link } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
+﻿import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AssetsDashboard } from "../../assets/components/AssetsDashboard";
 import { useBookmark } from "../../assets/hooks/useBookmark";
-import { ROUTES } from "../../../constants/routes.constants";
 import { useMyProfile } from "../hooks/useProfile";
 import type { MyProfile } from "../models/profile.models";
 
@@ -64,29 +62,20 @@ export function MyProfilePage() {
   return (
     <div className="mx-auto flex flex-col gap-6 px-4 py-10 sm:px-6 lg:py-14">
       <section className="rounded-2xl border border-secondary/30 bg-background p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            {profile.avatarUrl ? (
-              <img src={profile.avatarUrl} alt={profile.displayName} className="size-16 rounded-full object-cover" />
-            ) : (
-              <span className="flex size-16 items-center justify-center rounded-full bg-muted text-lg font-semibold text-text">
-                {getInitials(profile.displayName || profile.username || "Me")}
-              </span>
-            )}
+        <div className="flex items-center gap-4">
+          {profile.avatarUrl ? (
+            <img src={profile.avatarUrl} alt={profile.displayName} className="size-16 rounded-full object-cover" />
+          ) : (
+            <span className="flex size-16 items-center justify-center rounded-full bg-muted text-lg font-semibold text-text">
+              {getInitials(profile.displayName || profile.username || "Me")}
+            </span>
+          )}
 
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">{profile.displayName || "My profile"}</h1>
-              <p className="text-sm text-muted-foreground">@{profile.username || "username"}</p>
-              <p className="mt-1 text-xs text-text/70">{profile.email}</p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{profile.displayName || "My profile"}</h1>
+            <p className="text-sm text-muted-foreground">@{profile.username || "username"}</p>
+            <p className="mt-1 text-xs text-text/70">{profile.email}</p>
           </div>
-
-          <Link
-            to={ROUTES.SETTINGS}
-            className="inline-flex h-9 items-center justify-center rounded-md border border-secondary/30 bg-white px-4 text-sm font-medium text-text transition-colors hover:bg-primary/10 hover:text-primary"
-          >
-            Edit my profile
-          </Link>
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">

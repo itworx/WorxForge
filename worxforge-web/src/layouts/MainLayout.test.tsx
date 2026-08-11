@@ -18,7 +18,6 @@ function renderLayout(initialPath: string) {
           <Route path={ROUTES.MY_ASSETS_EDIT(":assetId").slice(1)} element={<div>Edit asset page</div>} />
           <Route path={ROUTES.NOTIFICATIONS.slice(1)} element={<div>Notifications page</div>} />
           <Route path={ROUTES.PROFILE_ME.slice(1)} element={<div>Profile page</div>} />
-          <Route path={ROUTES.SETTINGS.slice(1)} element={<div>Settings page</div>} />
         </Route>
       </Routes>
     </MemoryRouter>

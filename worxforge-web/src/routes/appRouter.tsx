@@ -12,7 +12,6 @@ import { CreateAssetPage } from "../features/assets/pages/CreateAssetPage";
 import { EditAssetPage } from "../features/assets/pages/EditAssetPage";
 import { MyProfilePage } from "../features/profile/pages/MyProfilePage";
 import { PublicProfilePage } from "../features/profile/pages/PublicProfilePage";
-import { SettingsPage } from "../features/settings/pages/SettingsPage";
 import { LibraryPage } from "../features/library/pages/LibraryPage";
 import { MyAssetsPage } from "../features/assets/pages/MyAssetsPage";
 import { NotificationsPage } from "../features/notifications/pages/NotificationsPage";
@@ -49,7 +48,6 @@ export const appRouter = createBrowserRouter([
       { path: toChildPath(ROUTES.ASSET(":assetId")), element: <ProtectedRoute><AssetDetailsPage /></ProtectedRoute> },
       { path: toChildPath(ROUTES.PROFILE_ME), element: <ProtectedRoute><MyProfilePage /></ProtectedRoute> },
       { path: toChildPath(ROUTES.PROFILE(":userId")), element: <ProtectedRoute><PublicProfilePage /></ProtectedRoute> },
-      { path: toChildPath(ROUTES.SETTINGS), element: <ProtectedRoute><SettingsPage /></ProtectedRoute> },
       { path: toChildPath(ROUTES.MY_LIBRARY), element: <ProtectedRoute><LibraryPage /></ProtectedRoute> },
       { path: toChildPath(ROUTES.MY_ASSETS), element: <ProtectedRoute><MyAssetsPage /></ProtectedRoute> },
       { path: toChildPath(ROUTES.MY_ASSETS_CREATE), element: <ProtectedRoute><CreateAssetPage /></ProtectedRoute> },

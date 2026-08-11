@@ -1,5 +1,5 @@
 ﻿import type { LucideIcon } from "lucide-react";
-import { Bell, Compass, House, Library, Package, Plus, Settings, User } from "lucide-react";
+import { Bell, Compass, House, Library, Package, Plus, User } from "lucide-react";
 import { ROUTES } from "../constants/routes.constants";
 
 export type NavigationGroup = "primary" | "account";
@@ -67,13 +67,6 @@ export const navigationItems: NavigationItem[] = [
     label: "Profile",
     path: ROUTES.PROFILE_ME,
     icon: User,
-    group: "account",
-    match: "exact"
-  },
-  {
-    label: "Settings",
-    path: ROUTES.SETTINGS,
-    icon: Settings,
     group: "account",
     match: "exact"
   }
