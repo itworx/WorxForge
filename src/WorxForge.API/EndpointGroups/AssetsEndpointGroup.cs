@@ -56,8 +56,12 @@ public static class AssetsEndpointGroup
             .Produces(StatusCodes.Status401Unauthorized);
         group.MapGet("/{assetId:guid}", GetAssetDetailsAsync);
         group.MapGet("/{assetId:guid}/comments", GetAssetCommentsAsync)
+            .Produces<PagedResultDto<AssetCommentDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         group.MapGet("/{assetId:guid}/comments/{commentId:guid}", GetAssetCommentThreadAsync)
+            .Produces<AssetCommentDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status401Unauthorized)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
         group.MapPost("/{assetId:guid}/comments", CreateAssetCommentAsync)
             .RequireAuthorization(PolicyConstants.AuthenticatedUser);
