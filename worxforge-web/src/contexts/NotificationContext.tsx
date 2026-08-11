@@ -1,5 +1,7 @@
 ﻿import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { PropsWithChildren } from "react";
+import { toast } from "sonner";
+import { ROUTES } from "../constants/routes.constants";
 import { getAccessToken } from "../services/tokenService";
 import { createNotificationsService } from "../features/notifications/services/notificationsService";
 import { createNotificationHubClient } from "../features/notifications/services/notificationHubService";
@@ -23,6 +25,16 @@ const NotificationContext = createContext<NotificationContextValue>({
   markOneReadLocally: noop,
   markAllReadLocally: noop
 });
+
+function buildNotificationTarget(message: NotificationDeliveryMessage): string {
+  if (message.assetId) {
+    return message.commentId
+      ? `${ROUTES.ASSET(message.assetId)}#comment-${message.commentId}`
+      : ROUTES.ASSET(message.assetId);
+  }
+
+  return ROUTES.NOTIFICATIONS;
+}
 
 export function NotificationProvider({ children }: PropsWithChildren) {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -51,6 +63,17 @@ export function NotificationProvider({ children }: PropsWithChildren) {
     hubClient.onNotification((message) => {
       setLastNotification(message);
       if (!message.isRead) {
+        const description = message.message.trim();
+        const target = buildNotificationTarget(message);
+        toast("New notification", {
+          description: description.length > 0 ? description : "You have a new notification.",
+          action: {
+            label: "Open",
+            onClick: () => {
+              window.location.assign(target);
+            }
+          }
+        });
         setUnreadCount((count) => count + 1);
       }
     });

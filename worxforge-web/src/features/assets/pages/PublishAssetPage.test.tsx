@@ -3,7 +3,6 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ROUTES } from "../../../constants/routes.constants";
-import { clearAccessToken, getAccessToken, setAccessToken } from "../../../services/tokenService";
 import { PublishAssetPage } from "./PublishAssetPage";
 import {
   useAssetEditorLookups,
@@ -145,7 +144,6 @@ async function completeRequiredFields(user: ReturnType<typeof userEvent.setup>) 
 
 describe("PublishAssetPage", () => {
   beforeEach(() => {
-    setAccessToken("test-access-token");
     createMutateAsync.mockReset();
     updateMutateAsync.mockReset();
     uploadMutateAsync.mockReset();
@@ -156,7 +154,6 @@ describe("PublishAssetPage", () => {
   });
 
   afterEach(() => {
-    clearAccessToken();
     vi.unstubAllGlobals();
   });
 
@@ -185,36 +182,13 @@ describe("PublishAssetPage", () => {
     expect(screen.getByText("Markdown content is required.")).not.toBeNull();
   });
 
-  it("blocks protected actions until authorization is connected", () => {
-    clearAccessToken();
-
+  it("keeps publish and markdown upload enabled without local dev auth controls", () => {
     renderPage(ROUTES.MY_ASSETS_CREATE);
 
-    expect((screen.getByRole("button", { name: "Publish Asset" }) as HTMLButtonElement).disabled).toBe(true);
-    expect((document.querySelector('input[type="file"]') as HTMLInputElement).disabled).toBe(true);
-    expect(screen.getByText("Not authorized")).not.toBeNull();
-  });
-
-  it("connects development authorization through the backend endpoint", async () => {
-    const user = userEvent.setup();
-    clearAccessToken();
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: async () => ({ accessToken: "backend-issued-token" })
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
-    renderPage(ROUTES.MY_ASSETS_CREATE);
-    await user.click(screen.getByRole("button", { name: "Connect Dev Auth" }));
-
-    expect(await screen.findByText("Session authorized")).not.toBeNull();
-    expect(getAccessToken()).toBe("backend-issued-token");
-    expect(fetchMock).toHaveBeenCalledWith("/api/authentication/debug-login", {
-      method: "POST",
-      headers: { Accept: "application/json" }
-    });
     expect((screen.getByRole("button", { name: "Publish Asset" }) as HTMLButtonElement).disabled).toBe(false);
+    expect((document.querySelector('input[type="file"]') as HTMLInputElement).disabled).toBe(false);
+    expect(screen.queryByRole("button", { name: "Connect Dev Auth" })).toBeNull();
+    expect(screen.queryByText("Not authorized")).toBeNull();
   });
 
   it("shows the controlled lookup failure reason and disables publishing", () => {
@@ -245,6 +219,22 @@ describe("PublishAssetPage", () => {
 
     await user.type(screen.getByLabelText("Markdown Editor"), "\n\nMore details");
     expect((screen.getByLabelText("Markdown Editor") as HTMLTextAreaElement).value).toBe("# Uploaded markdown\n\nMore details");
+  });
+
+  it("renders formatted markdown when preview is toggled on", async () => {
+    const user = userEvent.setup();
+
+    renderPage(ROUTES.MY_ASSETS_CREATE);
+
+    await user.type(screen.getByLabelText("Markdown Editor"), "# Preview heading\n\n- First item");
+    await user.click(screen.getByRole("button", { name: "Preview rendered markdown" }));
+
+    expect(screen.getByRole("region", { name: "Markdown Preview" })).not.toBeNull();
+    expect(screen.getByRole("heading", { name: "Preview heading" })).not.toBeNull();
+    expect(screen.getByText("First item")).not.toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Hide preview" }));
+    expect(screen.queryByRole("region", { name: "Markdown Preview" })).toBeNull();
   });
 
   it("rejects non-markdown uploads", async () => {

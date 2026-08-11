@@ -1,12 +1,12 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AlertCircle, FileUp, KeyRound, LoaderCircle, RefreshCw, Save, Upload, X } from "lucide-react";
+import { AlertCircle, Eye, EyeOff, FileUp, LoaderCircle, RefreshCw, Save, Upload, X } from "lucide-react";
+import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { ApiException, type CreateAssetRequest, type UpdateAssetRequest } from "../../../api/worxforgeClient";
 import { ROUTES } from "../../../constants/routes.constants";
 import { cn } from "../../../lib/utils";
-import { clearAccessToken, getAccessToken, setAccessToken } from "../../../services/tokenService";
 import { AssetCard } from "../components/AssetCard";
 import { useAssetEditorLookups, useAssetForEdit, useCreateAsset, useUpdateAsset, useUploadMarkdown } from "../hooks/useAssets";
 
@@ -30,6 +30,17 @@ const EMPTY_FORM_VALUES: AssetFormValues = {
   toolIds: [],
   tags: [],
   markdownContent: ""
+};
+
+const markdownPreviewComponents = {
+  h1: ({ children, ...props }: React.ComponentProps<"h1">) => <h1 className="mb-3 text-2xl font-semibold text-foreground" {...props}>{children}</h1>,
+  h2: ({ children, ...props }: React.ComponentProps<"h2">) => <h2 className="mb-2 mt-4 text-xl font-semibold text-foreground" {...props}>{children}</h2>,
+  h3: ({ children, ...props }: React.ComponentProps<"h3">) => <h3 className="mb-2 mt-3 text-lg font-semibold text-foreground" {...props}>{children}</h3>,
+  p: ({ children, ...props }: React.ComponentProps<"p">) => <p className="mb-3 text-sm leading-7 text-foreground" {...props}>{children}</p>,
+  ul: ({ children, ...props }: React.ComponentProps<"ul">) => <ul className="mb-3 list-disc space-y-1 pl-5 text-sm text-foreground" {...props}>{children}</ul>,
+  ol: ({ children, ...props }: React.ComponentProps<"ol">) => <ol className="mb-3 list-decimal space-y-1 pl-5 text-sm text-foreground" {...props}>{children}</ol>,
+  li: ({ children, ...props }: React.ComponentProps<"li">) => <li className="leading-7" {...props}>{children}</li>,
+  code: ({ children, ...props }: React.ComponentProps<"code">) => <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.9em] text-foreground" {...props}>{children}</code>
 };
 
 function normalizeTag(value: string): string {
@@ -163,8 +174,7 @@ export function PublishAssetPage() {
   const uploadInputId = useId();
   const [selectedFileName, setSelectedFileName] = useState<string>("");
   const [tagInputValue, setTagInputValue] = useState<string>("");
-  const [hasRuntimeToken, setHasRuntimeToken] = useState<boolean>(() => Boolean(getAccessToken()));
-  const [isAuthorizing, setIsAuthorizing] = useState(false);
+  const [isMarkdownPreviewVisible, setIsMarkdownPreviewVisible] = useState(false);
   const editHydratedRef = useRef(false);
 
   const {
@@ -185,7 +195,6 @@ export function PublishAssetPage() {
   const createMutation = useCreateAsset();
   const updateMutation = useUpdateAsset();
   const uploadMutation = useUploadMarkdown();
-  const hasAuthorization = hasRuntimeToken;
 
   const watchedValues = useWatch({ control });
   const deferredValues = useDeferredValue(watchedValues);
@@ -327,42 +336,6 @@ export function PublishAssetPage() {
     }
 
     navigate(ROUTES.MY_ASSETS);
-  }
-
-  async function handleConnectDevelopmentAuthorization() {
-    setIsAuthorizing(true);
-
-    try {
-      const baseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim()?.replace(/\/$/, "") ?? "";
-      const response = await fetch(`${baseUrl}/api/authentication/debug-login`, {
-        method: "POST",
-        headers: { Accept: "application/json" }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Auth endpoint returned HTTP ${response.status}.`);
-      }
-
-      const payload = await response.json() as { accessToken?: string; token?: string };
-      const token = payload.accessToken ?? payload.token;
-      if (!token || token.trim().length === 0) {
-        throw new Error("Auth endpoint did not return an access token.");
-      }
-
-      setAccessToken(token);
-      setHasRuntimeToken(true);
-      toast.success("Development authorization connected.");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not connect development authorization.");
-    } finally {
-      setIsAuthorizing(false);
-    }
-  }
-
-  function handleClearAuthorizationToken() {
-    clearAccessToken();
-    setHasRuntimeToken(false);
-    toast.success("Local authorization token removed.");
   }
 
   async function onSubmit(values: AssetFormValues) {
@@ -640,7 +613,7 @@ export function PublishAssetPage() {
                   htmlFor={uploadInputId}
                   className={cn(
                     "inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-primary/30 bg-background px-4 py-2.5 text-sm font-medium text-foreground shadow-sm transition-[background-color,color,transform] motion-safe:duration-180 motion-safe:ease-out motion-reduce:transition-none hover:bg-primary/10 hover:text-primary active:scale-[0.98] motion-reduce:active:scale-100",
-                    (uploadMutation.isPending || !hasAuthorization) && "cursor-not-allowed opacity-60"
+                    uploadMutation.isPending && "cursor-not-allowed opacity-60"
                   )}
                 >
                   <Upload className="size-4" aria-hidden="true" />
@@ -651,16 +624,25 @@ export function PublishAssetPage() {
                   type="file"
                   accept=".md"
                   className="sr-only"
-                  disabled={uploadMutation.isPending || !hasAuthorization}
+                  disabled={uploadMutation.isPending}
                   onChange={handleMarkdownUpload}
                 />
-                {!hasAuthorization ? (
-                  <p className="text-xs text-destructive">Connect development authorization before uploading.</p>
-                ) : null}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="asset-markdown">Markdown Editor</Label>
+                <div className="flex items-center justify-between gap-3">
+                  <Label htmlFor="asset-markdown">Markdown Editor</Label>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    onClick={() => setIsMarkdownPreviewVisible((current) => !current)}
+                    aria-expanded={isMarkdownPreviewVisible}
+                    aria-controls="asset-markdown-preview"
+                  >
+                    {isMarkdownPreviewVisible ? <EyeOff className="size-3.5" aria-hidden="true" /> : <Eye className="size-3.5" aria-hidden="true" />}
+                    {isMarkdownPreviewVisible ? "Hide preview" : "Preview rendered markdown"}
+                  </button>
+                </div>
                 <textarea
                   id="asset-markdown"
                   rows={18}
@@ -673,6 +655,21 @@ export function PublishAssetPage() {
                   })}
                 />
                 <FieldError message={errors.markdownContent?.message} />
+                {isMarkdownPreviewVisible ? (
+                  <section
+                    id="asset-markdown-preview"
+                    aria-label="Markdown Preview"
+                    className="wf-section-enter rounded-xl border border-border/70 bg-background p-4"
+                  >
+                    {(watchedValues.markdownContent ?? "").trim().length > 0 ? (
+                      <ReactMarkdown components={markdownPreviewComponents}>
+                        {watchedValues.markdownContent ?? ""}
+                      </ReactMarkdown>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">Start writing markdown content to preview it here.</p>
+                    )}
+                  </section>
+                ) : null}
               </div>
             </div>
           </Section>
@@ -691,51 +688,6 @@ export function PublishAssetPage() {
 
           <Section title="Publish Controls" description={isEditMode ? "Save your asset changes without creating a second asset." : "Publish once the form and preview are ready."} delayMs={260}>
             <div className="space-y-4">
-              <div className="rounded-xl border border-border/70 bg-background p-4 text-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="inline-flex items-center gap-2 font-medium text-foreground">
-                      <KeyRound className="size-4 text-primary" aria-hidden="true" />
-                      Authorization
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Publishing and Markdown upload require authentication. In development, the backend issues the token when you connect; nothing is pasted into this page.
-                    </p>
-                  </div>
-                  <span className={cn(
-                    "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                    hasAuthorization
-                      ? "border border-primary/35 bg-primary/10 text-primary"
-                      : "border border-border bg-muted text-muted-foreground"
-                  )}>
-                    {hasRuntimeToken ? "Session authorized" : "Not authorized"}
-                  </span>
-                </div>
-
-                <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
-                      onClick={() => {
-                        void handleConnectDevelopmentAuthorization();
-                      }}
-                      disabled={isAuthorizing}
-                    >
-                      {isAuthorizing ? "Connecting..." : "Connect Dev Auth"}
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
-                      onClick={handleClearAuthorizationToken}
-                      disabled={!hasRuntimeToken}
-                    >
-                      Clear
-                    </button>
-                  </div>
-                </div>
-              </div>
-
               <div className="rounded-xl border border-border/70 bg-background p-4 text-sm text-muted-foreground">
                 <p className="font-medium text-foreground">Checklist</p>
                 <ul className="mt-2 space-y-2">
@@ -748,7 +700,7 @@ export function PublishAssetPage() {
               <div className="flex flex-col gap-3 sm:flex-row">
                 <button
                   type="submit"
-                  disabled={!hasAuthorization || isPending || lookupsQuery.isLoading || hasLookupError || hasEditError}
+                  disabled={isPending || lookupsQuery.isLoading || hasLookupError || hasEditError}
                   className={cn(
                     "inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-[background-color,transform,box-shadow] motion-safe:duration-180 motion-safe:ease-out motion-reduce:transition-none hover:bg-primary/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98] motion-reduce:active:scale-100 disabled:cursor-not-allowed disabled:opacity-60",
                     isPending && "shadow-none"
@@ -768,7 +720,6 @@ export function PublishAssetPage() {
               </div>
 
               <p className="text-xs text-muted-foreground">
-                {!hasAuthorization ? "Connect authorization above before publishing. " : null}
                 Need to review published assets first? Visit <Link to={ROUTES.MY_ASSETS} className="font-medium text-primary hover:text-primary/80">My Assets</Link>.
               </p>
             </div>
