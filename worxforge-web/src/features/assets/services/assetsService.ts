@@ -68,7 +68,7 @@ class AssetLookupError extends Error {
   }
 }
 
-class AssetRequestError extends Error {
+export class AssetRequestError extends Error {
   readonly status?: number;
 
   constructor(message: string, status?: number) {

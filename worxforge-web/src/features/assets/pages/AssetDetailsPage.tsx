@@ -1,11 +1,12 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { FaCopy, FaDownload, FaFlag, FaRegThumbsDown, FaRegThumbsUp, FaShareAlt } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ROUTES } from "../../../constants/routes.constants";
 import { useAssetDetails } from "../hooks/useAssetDetails";
+import { AssetRequestError } from "../services/assetsService";
 import { useBookmark } from "../hooks/useBookmark";
 import { useAssetReaction, type ReactionType } from "../hooks/useAssetReaction";
 import { AssetCommentsSection } from "../../comments/components/AssetCommentsSection";
@@ -63,7 +64,13 @@ const markdownComponents: Components = {
 
 export function AssetDetailsPage() {
   const { assetId } = useParams<{ assetId: string }>();
-  const { data: asset, isLoading, isError } = useAssetDetails(assetId);
+  const { data: asset, isLoading, isError, error } = useAssetDetails(assetId);
+  const location = useLocation();
+
+  const highlightCommentId = useMemo(() => {
+    const match = /^#comment-(.+)$/.exec(location.hash);
+    return match?.[1];
+  }, [location.hash]);
 
   const [userReaction, setUserReaction] = useState<ReactionType | null>(null);
   const [likeCount, setLikeCount] = useState(0);
@@ -74,6 +81,13 @@ export function AssetDetailsPage() {
   const [markdownTab, setMarkdownTab] = useState<MarkdownTab>("rendered");
   const [isSaved, setIsSaved] = useState(false);
   const { mutate: toggleBookmark, isPending: isBookmarkPending } = useBookmark();
+
+  // Deep-linked comment notifications land on the discussion tab.
+  useEffect(() => {
+    if (highlightCommentId) {
+      setPrimaryTab("discussion");
+    }
+  }, [highlightCommentId]);
 
   useEffect(() => {
     setIsSaved(asset?.isBookmarked ?? false);
@@ -96,10 +110,24 @@ export function AssetDetailsPage() {
   }
 
   if (isError || !asset) {
+    const isNotFound = error instanceof AssetRequestError && error.status === 404;
+
     return (
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 text-text sm:px-6 lg:px-8">
         <section className="rounded-2xl border border-secondary/30 bg-background p-4 shadow-sm sm:p-6">
-          <p className="text-sm text-destructive">Could not load this asset. Please try again later.</p>
+          <p className="text-sm text-destructive">
+            {isNotFound
+              ? "This asset has been deleted or no longer exists."
+              : "Could not load this asset. Please try again later."}
+          </p>
+          {isNotFound && (
+            <Link
+              to={ROUTES.EXPLORE}
+              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+            >
+              Browse other assets
+            </Link>
+          )}
         </section>
       </main>
     );
@@ -389,7 +417,7 @@ export function AssetDetailsPage() {
           </div>
         ) : (
           <div className="p-4 sm:p-6">
-            <AssetCommentsSection assetId={asset.assetId} assetAuthorId={asset.authorId} />
+            <AssetCommentsSection assetId={asset.assetId} assetAuthorId={asset.authorId} highlightCommentId={highlightCommentId} />
           </div>
         )}
       </section>

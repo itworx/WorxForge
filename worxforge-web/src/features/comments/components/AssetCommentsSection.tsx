@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { AssetCommentDto } from "../../../api/worxforgeClient";
 import { useAuthContext } from "../../../contexts/AuthContext";
 import { formatDate, formatRelativeTime } from "../../../utils/date.utils";
@@ -9,6 +9,16 @@ import { useComments } from "../hooks/useComments";
 interface AssetCommentsSectionProps {
   assetId: string;
   assetAuthorId?: string;
+  highlightCommentId?: string;
+}
+
+function findParentCommentId(comments: AssetCommentDto[], targetCommentId: string): string | undefined {
+  for (const comment of comments) {
+    if (comment.replies?.some((reply) => reply.commentId === targetCommentId)) {
+      return comment.commentId;
+    }
+  }
+  return undefined;
 }
 
 function getDisplayName(comment: AssetCommentDto): string {
@@ -33,7 +43,7 @@ function normalizeIdentity(value: string | undefined): string {
   return (value ?? "").trim().toLowerCase();
 }
 
-export function AssetCommentsSection({ assetId, assetAuthorId }: AssetCommentsSectionProps) {
+export function AssetCommentsSection({ assetId, assetAuthorId, highlightCommentId }: AssetCommentsSectionProps) {
   const { isAuthenticated, user } = useAuthContext();
   const {
     comments,
@@ -83,6 +93,21 @@ export function AssetCommentsSection({ assetId, assetAuthorId }: AssetCommentsSe
   };
 
   const rootComments = useMemo(() => comments ?? [], [comments]);
+
+  // Auto-expand and scroll to a comment deep-linked from a notification.
+  useEffect(() => {
+    if (!highlightCommentId || rootComments.length === 0) {
+      return;
+    }
+
+    const parentCommentId = findParentCommentId(rootComments, highlightCommentId);
+    if (parentCommentId) {
+      setExpandedReplies((prev) => (prev.has(parentCommentId) ? prev : new Set(prev).add(parentCommentId)));
+    }
+
+    const element = document.getElementById(`comment-${highlightCommentId}`);
+    element?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlightCommentId, rootComments]);
 
   const handleCreateComment = async () => {
     const content = normalizeText(draftComment);
@@ -183,7 +208,9 @@ export function AssetCommentsSection({ assetId, assetAuthorId }: AssetCommentsSe
       <article
         key={commentId ?? `${displayName}-${comment.createdAt ?? "comment"}`}
         id={commentId ? `comment-${commentId}` : undefined}
-        className={`wf-section-enter rounded-xl border border-secondary/30 bg-white p-3 shadow-sm sm:p-4 ${isReply ? "ml-4" : ""}`}
+        className={`wf-section-enter rounded-xl border p-3 shadow-sm sm:p-4 ${isReply ? "ml-4" : ""} ${
+          commentId && commentId === highlightCommentId ? "border-primary ring-2 ring-primary/50" : "border-secondary/30 bg-white"
+        }`}
       >
         <header className="flex items-start justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2">
