@@ -17,9 +17,8 @@ public static class ApplicationBuilderExtensions
         }
 
         app.UseExceptionHandler();
-        // Enforce TLS so the SignalR "access_token" query string (see
-        // AuthenticationConfigurationExtensions.OnMessageReceived) is never sent in cleartext.
-        app.UseHttpsRedirection();
+        // No HTTPS redirection: deployment currently has no TLS certificate,
+        // so HTTP (including SignalR negotiate/websocket) must work as-is.
         app.UseCors(CorsConfigurationExtensions.PolicyName);
         app.UseAuthentication();
         app.UseAuthorization();
