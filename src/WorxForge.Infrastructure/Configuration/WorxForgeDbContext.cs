@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using WorxForge.Domain.Entities;
 using WorxForge.Domain.Enums;
 
@@ -24,6 +25,14 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
     public DbSet<Report> Reports => Set<Report>();
     public DbSet<ReportAsset> ReportAssets => Set<ReportAsset>();
     public DbSet<Notification> Notifications => Set<Notification>();
+
+    // SQL Server's datetime2 has no timezone info, so values come back with Kind=Unspecified;
+    // re-tag them as UTC (all writes use DateTime.UtcNow) so JSON serialization emits the trailing "Z".
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+        configurationBuilder.Properties<DateTime?>().HaveConversion<UtcNullableDateTimeConverter>();
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -321,4 +330,12 @@ public sealed class WorxForgeDbContext(DbContextOptions<WorxForgeDbContext> opti
 
         return new string(characters.ToArray());
     }
+
+    private sealed class UtcDateTimeConverter() : ValueConverter<DateTime, DateTime>(
+        v => v,
+        v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+    private sealed class UtcNullableDateTimeConverter() : ValueConverter<DateTime?, DateTime?>(
+        v => v,
+        v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
 }
