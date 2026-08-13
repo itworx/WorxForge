@@ -85,6 +85,12 @@ end_of_line              = lf
 [*.ps1]
 end_of_line              = crlf
 
+# ── Frontend (TypeScript / JavaScript / styles) ──────────────────────────────
+# Vite/React toolchain expects 2-space indentation and LF line endings.
+[*.{ts,tsx,js,jsx,mjs,cjs,css,scss,html}]
+end_of_line              = lf
+indent_size              = 2
+
 # ── Markdown ──────────────────────────────────────────────────────────────────
 [*.md]
 trim_trailing_whitespace = false

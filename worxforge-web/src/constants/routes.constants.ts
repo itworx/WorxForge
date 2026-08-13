@@ -1,0 +1,27 @@
+﻿export const ROUTES = {
+  AUTH: {
+    LOGIN: "/auth/login",
+    REGISTER: "/auth/register",
+    VERIFY_EMAIL: "/auth/verify-email",
+    FORGOT_PASSWORD: "/auth/forgot-password",
+    RESET_PASSWORD: (token: string) => `/auth/reset-password/${token}`,
+  },
+  HOME: "/home",
+  EXPLORE: "/explore",
+  ASSET: (assetId: string) => `/asset/${assetId}`,
+  PROFILE_ME: "/profile/me",
+  PROFILE: (userId: string) => `/profile/${userId}`,
+  MY_LIBRARY: "/my-library",
+  MY_ASSETS: "/my-assets",
+  MY_ASSETS_CREATE: "/my-assets/create",
+  MY_ASSETS_EDIT: (assetId: string) => `/my-assets/${assetId}/edit`,
+  NOTIFICATIONS: "/notifications",
+  ADMIN: {
+    USERS: "/admin/users",
+    ASSETS: "/admin/assets",
+    COMMENTS: "/admin/comments",
+    REPORTS: "/admin/reports",
+  },
+  UNAUTHORIZED: "/unauthorized",
+  ERROR: "/error",
+} as const;

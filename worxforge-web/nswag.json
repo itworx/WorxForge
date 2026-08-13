@@ -1,0 +1,41 @@
+{
+  "runtime": "Net100",
+  "defaultVariables": null,
+  "documentGenerator": {
+    "fromDocument": {
+      "json": "",
+      "url": "http://localhost:5222/swagger/v1/swagger.json",
+      "output": null
+    }
+  },
+  "codeGenerators": {
+    "openApiToTypeScriptClient": {
+      "className": "{controller}Client",
+      "moduleName": "",
+      "namespace": "",
+      "typeScriptVersion": 5.0,
+      "template": "Fetch",
+      "promiseType": "Promise",
+      "withCredentials": false,
+      "dateTimeType": "String",
+      "nullValue": "Undefined",
+      "generateClientClasses": true,
+      "generateClientInterfaces": true,
+      "generateOptionalParameters": false,
+      "exportTypes": true,
+      "wrapDtoExceptions": true,
+      "exceptionClass": "ApiException",
+      "generateDtoTypes": true,
+      "operationGenerationMode": "MultipleClientsFromOperationId",
+      "markOptionalProperties": true,
+      "typeStyle": "Interface",
+      "enumStyle": "StringLiteral",
+      "generateDefaultValues": true,
+      "importRequiredTypes": true,
+      "useAbortSignal": true,
+      "inlineNamedDictionaries": false,
+      "inlineNamedAny": false,
+      "output": "src/api/worxforgeClient.ts"
+    }
+  }
+}
