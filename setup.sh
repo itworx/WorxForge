@@ -171,7 +171,7 @@ fi
 #  FRONTEND
 # =============================================================================
 if [[ "$RUN_FRONTEND" == "true" ]]; then
-    FRONTEND_DIR="$SCRIPT_DIR/worxforge-web"
+    FRONTEND_DIR="$SCRIPT_DIR/src/WorxForge.UI"
 
     echo -e "${CYAN}------------------------------------------${RESET}"
     echo -e "${CYAN}  Frontend setup${RESET}"
@@ -316,7 +316,7 @@ if [[ "$RUN_FRONTEND" == "true" ]]; then
     echo ""
     echo -e "${GREEN}  Frontend setup complete.${RESET}"
     if [[ "$START_DEV_SERVER" != "true" ]]; then
-        info "  Run the app:  cd worxforge-web  ->  npm run dev"
+        info "  Run the app:  cd src/WorxForge.UI  ->  npm run dev"
         info "  Then open:    http://localhost:5173"
     fi
     echo ""

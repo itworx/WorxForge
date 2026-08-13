@@ -91,6 +91,10 @@ end_of_line              = crlf
 end_of_line              = lf
 indent_size              = 2
 
+# Frontend subtree uses LF universally (covers JSON and any other file types).
+[src/WorxForge.UI/**]
+end_of_line              = lf
+
 # ── Markdown ──────────────────────────────────────────────────────────────────
 [*.md]
 trim_trailing_whitespace = false

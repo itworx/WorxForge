@@ -7,7 +7,7 @@ This is the **WorxForge monorepo**: it contains both the backend API and the web
 | Part | Location | Stack |
 |---|---|---|
 | **Backend** | [`src/`](src/) | ASP.NET Core 10, Clean Architecture, EF Core, SignalR, Google OAuth 2.0 |
-| **Frontend** | [`worxforge-web/`](worxforge-web/) | React 19 + TypeScript, Vite 8, Tailwind CSS v4, TanStack Query |
+| **Frontend** | [`src/WorxForge.UI/`](src/WorxForge.UI/) | React 19 + TypeScript, Vite 8, Tailwind CSS v4, TanStack Query |
 
 > This repository was formed by merging the previously separate `WorxForge-BE` and `WorxForge-FE` repositories, **preserving the full commit history of both**. See [`docs/repository-consolidation.md`](docs/repository-consolidation.md).
 
@@ -33,16 +33,16 @@ This is the **WorxForge monorepo**: it contains both the backend API and the web
 
 ```
 WorxForge/
-├── src/                          # Backend (.NET solution: WorxForge.slnx)
+├── src/                          # Backend (.NET solution: WorxForge.slnx) + frontend
 │   ├── WorxForge.API/            # ASP.NET Core minimal API, endpoints, middleware, SignalR hubs
 │   ├── WorxForge.Core/           # Handlers, validators, service & repository interfaces
 │   ├── WorxForge.Domain/         # Entities, commands, queries, DTOs, errors
 │   ├── WorxForge.Infrastructure/ # EF Core DbContext, repositories, services, migrations
+│   ├── WorxForge.UI/             # Frontend (Vite + React + TypeScript)
+│   │   ├── src/                  # Feature-based application source
+│   │   ├── public/
+│   │   └── package.json
 │   └── Tests/                    # Unit / Integration / System tests
-├── worxforge-web/                # Frontend (Vite + React + TypeScript)
-│   ├── src/                      # Feature-based application source
-│   ├── public/
-│   └── package.json
 ├── .config/dotnet-tools.json     # Local .NET tools (dotnet-ef, ...)
 ├── Directory.Build.props         # Shared MSBuild properties
 ├── Directory.Packages.props      # Central NuGet package management
@@ -73,10 +73,10 @@ Dependencies flow inward: `API → Core → Domain` and `Infrastructure → Core
 
 ### Frontend
 
-The app in `worxforge-web/` uses a feature-based folder structure:
+The app in `src/WorxForge.UI/` uses a feature-based folder structure:
 
 ```
-worxforge-web/src/
+src/WorxForge.UI/src/
   features/           # One folder per domain (assets, auth, explore, home, ...)
     <feature>/
       components/     # UI components scoped to this feature
@@ -190,7 +190,7 @@ dotnet run
 
 ## Frontend Development
 
-Environment variables live in `worxforge-web/.env.local` (git-ignored). Copy `worxforge-web/.env.example` to start.
+Environment variables live in `src/WorxForge.UI/.env.local` (git-ignored). Copy `src/WorxForge.UI/.env.example` to start.
 
 | Variable | Description | Required |
 |---|---|---|
@@ -199,9 +199,9 @@ Environment variables live in `worxforge-web/.env.local` (git-ignored). Copy `wo
 | `VITE_GOOGLE_CLIENT_ID` | Google OAuth 2.0 Client ID from Google Cloud Console. | Yes |
 
 ```bash
-cd worxforge-web
+cd src/WorxForge.UI
 npm run dev        # http://localhost:5173
-npm run build      # production build -> worxforge-web/dist/
+npm run build      # production build -> src/WorxForge.UI/dist/
 ```
 
 ---
@@ -211,13 +211,13 @@ npm run build      # production build -> worxforge-web/dist/
 For local development, point the frontend proxy at the running backend:
 
 ```env
-# worxforge-web/.env.local
+# src/WorxForge.UI/.env.local
 VITE_API_PROXY_TARGET=https://localhost:7235
 ```
 
 Vite forwards all `/api/*` requests from the frontend dev server to that URL, so no CORS configuration is needed locally. Run the backend (see above), then the frontend.
 
-The frontend's typed API client is generated from the backend's OpenAPI document via NSwag (`worxforge-web/generate-api.ps1`).
+The frontend's typed API client is generated from the backend's OpenAPI document via NSwag (`src/WorxForge.UI/generate-api.ps1`).
 
 ---
 
@@ -232,7 +232,7 @@ dotnet test src/WorxForge.slnx
 **Frontend**
 
 ```bash
-cd worxforge-web
+cd src/WorxForge.UI
 npm test              # vitest run
 npm run test:watch    # watch mode
 npm run lint          # oxlint
@@ -242,7 +242,7 @@ npm run lint          # oxlint
 
 ## CI/CD
 
-No CI/CD workflows are configured yet. When added, backend and frontend pipelines should be **path-filtered** so each runs only when its part of the tree changes (e.g. `src/**` for backend, `worxforge-web/**` for frontend).
+No CI/CD workflows are configured yet. When added, backend and frontend pipelines should be **path-filtered** so each runs only when its part of the tree changes (e.g. `src/WorxForge.API/**`, `src/WorxForge.Core/**`, etc. for backend; `src/WorxForge.UI/**` for frontend).
 
 ---
 

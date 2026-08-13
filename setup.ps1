@@ -224,7 +224,7 @@ if ($runBackend) {
 #  FRONTEND
 # =============================================================================
 if ($runFrontend) {
-    $FrontendDir = Join-Path $PSScriptRoot 'worxforge-web'
+    $FrontendDir = Join-Path $PSScriptRoot 'src\WorxForge.UI'
     $NvmrcPath   = Join-Path $PSScriptRoot '.nvmrc'
 
     Write-Host '------------------------------------------' -ForegroundColor DarkCyan
@@ -371,7 +371,7 @@ if ($runFrontend) {
     Write-Host ''
     Write-Host '  Frontend setup complete.' -ForegroundColor Green
     if (-not $StartDevServer) {
-        Write-Info '  Run the app:  cd worxforge-web  ->  npm run dev'
+        Write-Info '  Run the app:  cd src\WorxForge.UI  ->  npm run dev'
         Write-Info '  Then open:    http://localhost:5173'
     }
     Write-Host ''
