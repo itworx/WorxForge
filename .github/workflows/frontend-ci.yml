@@ -1,0 +1,60 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/WorxForge.UI/**"
+      - ".nvmrc"
+      - ".github/workflows/frontend-ci.yml"
+      - ".github/workflows/release.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/WorxForge.UI/**"
+      - ".nvmrc"
+      - ".github/workflows/frontend-ci.yml"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  validate:
+    name: Install, lint, test, and build
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: src/WorxForge.UI
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: src/WorxForge.UI/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test -- --maxWorkers=1
+
+      - name: Build
+        run: npm run build

@@ -1,0 +1,76 @@
+name: Backend CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/WorxForge.API/**"
+      - "src/WorxForge.Core/**"
+      - "src/WorxForge.Domain/**"
+      - "src/WorxForge.Infrastructure/**"
+      - "src/Tests/**"
+      - "src/WorxForge.slnx"
+      - "global.json"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - ".editorconfig"
+      - ".github/workflows/backend-ci.yml"
+      - ".github/workflows/release.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/WorxForge.API/**"
+      - "src/WorxForge.Core/**"
+      - "src/WorxForge.Domain/**"
+      - "src/WorxForge.Infrastructure/**"
+      - "src/Tests/**"
+      - "src/WorxForge.slnx"
+      - "global.json"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - ".editorconfig"
+      - ".github/workflows/backend-ci.yml"
+      - ".github/workflows/release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  validate:
+    name: Restore, build, and test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('global.json', 'Directory.Packages.props', 'Directory.Build.props', 'src/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore src/WorxForge.slnx
+
+      - name: Build
+        run: dotnet build src/WorxForge.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test src/WorxForge.slnx --configuration Release --no-build --verbosity normal

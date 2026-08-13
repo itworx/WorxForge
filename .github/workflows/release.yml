@@ -1,0 +1,229 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (for example, v1.1.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worxforge-release
+  cancel-in-progress: false
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+
+jobs:
+  preflight:
+    name: Validate release request
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.validate.outputs.version }}
+      source_sha: ${{ steps.validate.outputs.source_sha }}
+      prerelease: ${{ steps.validate.outputs.prerelease }}
+
+    steps:
+      - name: Check out requested source
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Validate main, SemVer, tag, and release
+        id: validate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "Releases must be dispatched from main; received ${GITHUB_REF}." >&2
+            exit 1
+          fi
+
+          semver_regex='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)(\.(0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*))?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
+          if [[ ! "${VERSION}" =~ ${semver_regex} ]]; then
+            echo "Version must be valid SemVer prefixed with v (for example, v1.1.0)." >&2
+            exit 1
+          fi
+
+          if git show-ref --tags --verify --quiet "refs/tags/${VERSION}"; then
+            echo "Tag ${VERSION} already exists." >&2
+            exit 1
+          fi
+
+          if gh release view "${VERSION}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${VERSION} already exists." >&2
+            exit 1
+          fi
+
+          source_sha="$(git rev-parse HEAD)"
+          prerelease=false
+          if [[ "${VERSION}" == *-* ]]; then
+            prerelease=true
+          fi
+
+          echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "source_sha=${source_sha}" >> "${GITHUB_OUTPUT}"
+          echo "prerelease=${prerelease}" >> "${GITHUB_OUTPUT}"
+
+  validate-backend:
+    name: Validate backend
+    needs: preflight
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out validated source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.preflight.outputs.source_sha }}
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('global.json', 'Directory.Packages.props', 'Directory.Build.props', 'src/**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore
+        run: dotnet restore src/WorxForge.slnx
+
+      - name: Build
+        run: dotnet build src/WorxForge.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test src/WorxForge.slnx --configuration Release --no-build --verbosity normal
+
+  validate-frontend:
+    name: Validate frontend
+    needs: preflight
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: src/WorxForge.UI
+
+    steps:
+      - name: Check out validated source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.preflight.outputs.source_sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: src/WorxForge.UI/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test -- --maxWorkers=1
+
+      - name: Build
+        run: npm run build
+
+  publish:
+    name: Tag and publish release
+    needs: [preflight, validate-backend, validate-frontend]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out validated source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.preflight.outputs.source_sha }}
+          fetch-depth: 0
+
+      - name: Revalidate main and release uniqueness
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
+          VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          git fetch origin main --no-tags
+          current_main="$(git rev-parse origin/main)"
+          if [[ "${current_main}" != "${SOURCE_SHA}" ]]; then
+            echo "main moved from ${SOURCE_SHA} to ${current_main}; dispatch the release again so the new head is validated." >&2
+            exit 1
+          fi
+
+          existing_tag="$(git ls-remote --tags origin "refs/tags/${VERSION}")"
+          if [[ -n "${existing_tag}" ]]; then
+            echo "Tag ${VERSION} already exists remotely." >&2
+            exit 1
+          fi
+
+          if gh release view "${VERSION}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${VERSION} already exists." >&2
+            exit 1
+          fi
+
+      - name: Create and push annotated tag
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
+          VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag --annotate "${VERSION}" "${SOURCE_SHA}" --message "WorxForge ${VERSION}"
+          git push origin "refs/tags/${VERSION}"
+
+      - name: Publish GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ needs.preflight.outputs.prerelease }}
+          SOURCE_SHA: ${{ needs.preflight.outputs.source_sha }}
+          VERSION: ${{ needs.preflight.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          args=(
+            release create "${VERSION}"
+            --repo "${GITHUB_REPOSITORY}"
+            --verify-tag
+            --target "${SOURCE_SHA}"
+            --title "${VERSION}"
+            --generate-notes
+          )
+          if [[ "${PRERELEASE}" == "true" ]]; then
+            args+=(--prerelease)
+          fi
+
+          gh "${args[@]}"
+
+      - name: Summarize release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.preflight.outputs.version }}
+        run: gh release view "${VERSION}" --repo "${GITHUB_REPOSITORY}" --json tagName,url,isDraft,isPrerelease,targetCommitish

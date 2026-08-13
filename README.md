@@ -256,7 +256,17 @@ Quality tooling: `oxlint` (frontend), shared `.editorconfig`, and central NuGet 
 
 ## CI/CD
 
-No GitHub Actions workflows are configured yet. When added, backend and frontend pipelines should be **path-filtered** so each runs only when its part of the tree changes (`src/WorxForge.API/**`, `src/WorxForge.Core/**`, … for backend; `src/WorxForge.UI/**` for frontend).
+- **Backend CI** (`.github/workflows/backend-ci.yml`) restores, builds, and tests the .NET solution for relevant pull requests and pushes to `main`.
+- **Frontend CI** (`.github/workflows/frontend-ci.yml`) performs a clean npm install, high-severity dependency audit, lint, tests, and a production build for relevant pull requests and pushes to `main`.
+- **Release** (`.github/workflows/release.yml`) is a manual, `main`-only workflow. It validates a `v`-prefixed SemVer version, rejects existing tags/releases, revalidates both stacks, creates an annotated tag without force, and publishes a GitHub Release with generated notes.
+
+Run a future release from `main` with:
+
+```bash
+gh workflow run release.yml --ref main -f version=v1.1.0
+```
+
+GitHub Pages is intentionally not configured or published. Pages remains deferred while this private repository's current organization plan does not support it; static landing-page source can be added later without enabling publication.
 
 ## Development Workflow
 
