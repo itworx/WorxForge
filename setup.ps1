@@ -23,11 +23,11 @@ $InfraProject       = Join-Path $PSScriptRoot 'src\WorxForge.Infrastructure'
 
 Write-Host ''
 Write-Host '======================================' -ForegroundColor DarkCyan
-Write-Host '   WorxForge Backend — First-Time Setup' -ForegroundColor DarkCyan
+Write-Host '   WorxForge Backend - First-Time Setup' -ForegroundColor DarkCyan
 Write-Host '======================================' -ForegroundColor DarkCyan
 Write-Host ''
 
-# ── 1. Verify .NET SDK ────────────────────────────────────────────────────────
+# -- 1. Verify .NET SDK --------------------------------------------------------
 Write-Step 'Checking .NET SDK...'
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
     Write-Fail '.NET SDK not found. Download from https://dotnet.microsoft.com/download'
@@ -41,32 +41,44 @@ if (-not (Test-Path $SolutionFile)) {
     exit 1
 }
 
-# ── 2. Restore local tools (includes dotnet-ef) ───────────────────────────────
+# -- 2. Restore local tools ---------------------------------------------------
 Write-Step 'Restoring local .NET tools...'
 dotnet tool restore
 if ($LASTEXITCODE -ne 0) { Write-Fail 'Local tool restore failed.'; exit 1 }
 Write-Ok 'Local .NET tools restored.'
 
-# ── 3. Restore NuGet packages ─────────────────────────────────────────────────
+# -- 2b. Ensure dotnet-ef is available ----------------------------------------
+Write-Step 'Checking dotnet-ef tool...'
+$efAvailable = dotnet ef --version 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Warn 'dotnet-ef not found. Installing globally (version 10.0.10)...'
+    dotnet tool install --global dotnet-ef --version 10.0.10
+    if ($LASTEXITCODE -ne 0) { Write-Fail 'Failed to install dotnet-ef. Install it manually: dotnet tool install --global dotnet-ef --version 10.0.10'; exit 1 }
+    Write-Ok 'dotnet-ef installed.'
+} else {
+    Write-Ok "dotnet-ef $efAvailable detected."
+}
+
+# -- 3. Restore NuGet packages -------------------------------------------------
 Write-Step 'Restoring NuGet packages...'
 dotnet restore $SolutionFile --force-evaluate
 if ($LASTEXITCODE -ne 0) { Write-Fail 'NuGet restore failed.'; exit 1 }
 Write-Ok 'NuGet restore succeeded.'
 
-# ── 4. Build ──────────────────────────────────────────────────────────────────
+# -- 4. Build ------------------------------------------------------------------
 Write-Step 'Building solution...'
 dotnet build $SolutionFile --no-restore --configuration Debug
 if ($LASTEXITCODE -ne 0) { Write-Fail 'Build failed.'; exit 1 }
 Write-Ok 'Build succeeded.'
 
-# ── 5. User Secrets ───────────────────────────────────────────────────────────
+# -- 5. User Secrets -----------------------------------------------------------
 Write-Host ''
 Write-Step 'Configuring user secrets...'
 
-# Init is idempotent — safe to run every time
-dotnet user-secrets init --project $ApiProject 2>$null | Out-Null
+# Init is idempotent - safe to run every time
+dotnet user-secrets init --project $ApiProject 2>&1 | Out-Null
 
-$secretsList = (dotnet user-secrets list --project $ApiProject 2>$null) -join "`n"
+$secretsList = (dotnet user-secrets list --project $ApiProject 2>&1) -join "`n"
 
 # required secrets: key, description, example value, whether it can be skipped
 $secrets = @(
@@ -102,9 +114,9 @@ foreach ($s in $secrets) {
 
     if ($NonInteractive) {
         if ($s.Optional) {
-            Write-Warn "$($s.Key) not set (optional — skip if not using Google sign-in)."
+            Write-Warn "$($s.Key) not set (optional - skip if not using Google sign-in)."
         } else {
-            Write-Warn "$($s.Key) not set — required. Set it with:`n         dotnet user-secrets set `"$($s.Key)`" `"<value>`" --project src/WorxForge.API"
+            Write-Warn "$($s.Key) not set - required. Run: dotnet user-secrets set `"$($s.Key)`" `"<value>`" --project src/WorxForge.API"
         }
         continue
     }
@@ -127,15 +139,15 @@ foreach ($s in $secrets) {
         continue
     }
 
-    dotnet user-secrets set $s.Key $value --project $ApiProject | Out-Null
+    dotnet user-secrets set "$($s.Key)" "$value" --project $ApiProject | Out-Null
     if ($LASTEXITCODE -eq 0) {
         Write-Ok "$($s.Key) saved."
     } else {
-        Write-Warn "Failed to save $($s.Key) — set it manually."
+        Write-Warn "Failed to save $($s.Key) - set it manually."
     }
 }
 
-# ── 6. Optional: apply EF Core migrations ─────────────────────────────────────
+# -- 6. Optional: apply EF Core migrations -------------------------------------
 Write-Host ''
 
 $runMigrations = $false
@@ -146,10 +158,13 @@ if (-not $NonInteractive) {
 
 if ($runMigrations) {
     Write-Step 'Applying EF Core migrations...'
-    dotnet ef database update `
-        --project $InfraProject `
-        --startup-project $ApiProject `
-        --context WorxForge.Infrastructure.Configuration.WorxForgeDbContext
+    $efArgs = @(
+        'database', 'update',
+        '--project', $InfraProject,
+        '--startup-project', $ApiProject,
+        '--context', 'WorxForge.Infrastructure.Configuration.WorxForgeDbContext'
+    )
+    dotnet ef @efArgs
     if ($LASTEXITCODE -ne 0) {
         Write-Fail 'Migration failed. Check that your connection string is correct and SQL Server is reachable.'
         exit 1
@@ -160,7 +175,7 @@ if ($runMigrations) {
     Write-Info '  dotnet ef database update --project src\WorxForge.Infrastructure --startup-project src\WorxForge.API --context WorxForge.Infrastructure.Configuration.WorxForgeDbContext'
 }
 
-# ── 7. Done ───────────────────────────────────────────────────────────────────
+# -- 7. Done -------------------------------------------------------------------
 Write-Host ''
 Write-Host '  Setup complete.' -ForegroundColor Green
 Write-Host ''
