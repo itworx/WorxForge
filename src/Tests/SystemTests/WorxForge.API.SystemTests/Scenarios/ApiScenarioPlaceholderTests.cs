@@ -2,6 +2,6 @@
 
 public sealed class ApiScenarioPlaceholderTests
 {
-    [Fact]
+    [Fact(Skip = "Placeholder test: API system scenarios are not implemented yet.")]
     public void Placeholder() => throw new NotImplementedException();
 }

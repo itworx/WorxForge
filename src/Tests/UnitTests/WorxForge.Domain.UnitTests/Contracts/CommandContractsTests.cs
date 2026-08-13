@@ -2,7 +2,7 @@
 
 public sealed class CommandContractsTests
 {
-    [Fact]
+    [Fact(Skip = "Placeholder test: command contract coverage is not implemented yet.")]
     public void Placeholder() => throw new NotImplementedException();
 }
 
