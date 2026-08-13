@@ -1,5 +1,5 @@
 $scriptRoot = $PSScriptRoot
-$apiProject = Join-Path $scriptRoot "..\..\..\..\back\WorxForge-BE\src\WorxForge.API\WorxForge.API.csproj"
+$apiProject = Join-Path $scriptRoot "..\WorxForge.API\WorxForge.API.csproj"
 $swaggerUrl  = "http://localhost:5222/swagger/v1/swagger.json"
 $nswagConfig = Join-Path $scriptRoot "nswag.json"
 
