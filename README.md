@@ -10,6 +10,20 @@ an ASP.NET Core API and a React web app. The source includes generic lookup data
 it does not include external login accounts, mailboxes, credentials, or a populated
 organization knowledgebase.
 
+## The story behind WorxForge
+
+WorxForge began as a four-week ITWorx summer internship project in Summer 2026.
+Four undergraduate computer science students built and demonstrated the initial
+application with AI coding tools and senior mentorship.
+
+The whitepaper **Junior Developers Can Build with AI Coding Agents** describes
+the learning approach, mentor-reported outcomes, and evidence limits of this
+single-cohort case study. The current repository includes later release preparation
+changes; see [feature status](docs/feature-status.md) for current capabilities.
+
+[Read the whitepaper](docs/whitepaper/whitepaper.md) ·
+[Download the PDF](docs/whitepaper/WorxForge-Case-Study.pdf)
+
 ## What you can do
 
 - Explore, search, and filter assets; view asset details and Markdown previews.
