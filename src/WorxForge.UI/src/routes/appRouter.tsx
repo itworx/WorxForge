@@ -30,6 +30,7 @@ export const appRouter = createBrowserRouter([
   {
     path: toChildPath(ROUTES.AUTH.LOGIN).split("/").slice(0, -1).join("/"),
     element: <AuthLayout />,
+    errorElement: <ErrorPage />,
     children: [
       { path: toChildPath(ROUTES.AUTH.LOGIN).split("/").at(-1), element: <LoginPage /> },
       { path: toChildPath(ROUTES.AUTH.REGISTER).split("/").at(-1), element: <Navigate to={ROUTES.AUTH.LOGIN} replace /> },
@@ -41,6 +42,7 @@ export const appRouter = createBrowserRouter([
   {
     path: "/",
     element: <MainLayout />,
+    errorElement: <ErrorPage />,
     children: [
       { index: true, element: <Navigate to={ROUTES.HOME} replace /> },
       { path: toChildPath(ROUTES.HOME), element: <ProtectedRoute><HomePage /></ProtectedRoute> },
@@ -52,12 +54,15 @@ export const appRouter = createBrowserRouter([
       { path: toChildPath(ROUTES.MY_ASSETS), element: <ProtectedRoute><MyAssetsPage /></ProtectedRoute> },
       { path: toChildPath(ROUTES.MY_ASSETS_CREATE), element: <ProtectedRoute><CreateAssetPage /></ProtectedRoute> },
       { path: toChildPath(ROUTES.MY_ASSETS_EDIT(":assetId")), element: <ProtectedRoute><EditAssetPage /></ProtectedRoute> },
-      { path: toChildPath(ROUTES.NOTIFICATIONS), element: <ProtectedRoute><NotificationsPage /></ProtectedRoute> }
+      { path: toChildPath(ROUTES.NOTIFICATIONS), element: <ProtectedRoute><NotificationsPage /></ProtectedRoute> },
+      { path: toChildPath(ROUTES.UNAUTHORIZED), element: <UnauthorizedPage /> },
+      { path: "*", element: <NotFoundPage /> }
     ]
   },
   {
     path: toChildPath(ROUTES.ADMIN.USERS).split("/").slice(0, -1).join("/"),
     element: <AdminRoute><AdminLayout /></AdminRoute>,
+    errorElement: <ErrorPage />,
     children: [
       { path: toChildPath(ROUTES.ADMIN.USERS).split("/").at(-1), element: <AdminUsersPage /> },
       { path: toChildPath(ROUTES.ADMIN.ASSETS).split("/").at(-1), element: <AdminAssetsPage /> },
@@ -65,8 +70,6 @@ export const appRouter = createBrowserRouter([
       { path: toChildPath(ROUTES.ADMIN.REPORTS).split("/").at(-1), element: <AdminReportsPage /> }
     ]
   },
-  { path: ROUTES.UNAUTHORIZED, element: <UnauthorizedPage /> },
-  { path: ROUTES.ERROR, element: <ErrorPage /> },
-  { path: "*", element: <NotFoundPage /> }
+  { path: ROUTES.ERROR, element: <ErrorPage /> }
 ]);
 
